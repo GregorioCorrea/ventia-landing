@@ -4,1298 +4,943 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ventia — COBROSMART Demo</title>
-
-  <!-- Google Fonts (CDN only) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#0a0a0a;
       --paper:#f5f3ef;
       --ink:#111111;
-      --muted:#6b6b6b;
+      --muted:#8a8a8a;
       --green:#00c87a;
+      --green-dim:rgba(0,200,122,0.12);
       --accent:#ff4d1c;
-
-      --card: rgba(245,243,239,0.06);
-      --border: rgba(245,243,239,0.14);
-      --shadow: 0 16px 40px rgba(0,0,0,0.35);
-      --radius: 18px;
+      --card:rgba(255,255,255,0.04);
+      --border:rgba(255,255,255,0.10);
+      --border-strong:rgba(255,255,255,0.16);
+      --shadow:0 20px 48px rgba(0,0,0,0.40);
+      --radius:16px;
+      --font-display:'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-body:'IBM Plex Sans', system-ui, sans-serif;
     }
-
-    *{ box-sizing:border-box; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
     html,body{ height:100%; }
     body{
-      margin:0;
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(0,200,122,0.18), transparent 55%),
-                  radial-gradient(900px 500px at 110% 10%, rgba(255,77,28,0.12), transparent 50%),
-                  var(--bg);
-      color: var(--paper);
-      font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      line-height:1.35;
+      background:
+        radial-gradient(ellipse 1000px 500px at 15% -5%, rgba(0,200,122,0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 700px 400px at 95% 8%, rgba(255,77,28,0.09) 0%, transparent 55%),
+        var(--bg);
+      color:var(--paper);
+      font-family:var(--font-body);
+      font-size:14px;
+      line-height:1.5;
+      -webkit-font-smoothing:antialiased;
     }
 
-    a{ color: inherit; }
+    /* ── Layout ── */
+    .app{ max-width:1120px; margin:0 auto; padding:16px 16px 48px; }
 
-    /* Layout */
-    .app{
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 18px 14px 42px;
-    }
-
+    /* ── Header ── */
     header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 8px 2px 18px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding:10px 0 20px; flex-wrap:wrap;
     }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width: 220px;
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo-svg{ width:32px; height:32px; flex-shrink:0; }
+    .brand-text .kicker{
+      font-family:var(--font-body); font-size:11px; font-weight:500;
+      letter-spacing:0.08em; text-transform:uppercase;
+      color:rgba(245,243,239,0.55);
     }
-
-    .logo{
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, rgba(0,200,122,1), rgba(0,200,122,0.45));
-      box-shadow: 0 10px 24px rgba(0,200,122,0.20);
-      position: relative;
-      flex: 0 0 auto;
+    .brand-text h1{
+      font-family:var(--font-display); font-weight:800; font-size:17px;
+      letter-spacing:-0.02em; color:var(--paper); line-height:1.1;
     }
-    .logo::after{
-      content:"V";
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-      font-family: "Syne", sans-serif;
-      font-weight:800;
-      color: var(--bg);
-      letter-spacing: -0.02em;
-    }
-
-    .titleblock .kicker{
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .titleblock h1{
-      margin: 2px 0 0;
-      font-family: "Syne", sans-serif;
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: -0.02em;
-    }
-
-    .headerRight{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:10px;
-      flex-wrap: wrap;
-    }
-
+    .pills{ display:flex; gap:8px; flex-wrap:wrap; }
     .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 9px 12px;
-      border: 1px solid var(--border);
-      background: rgba(245,243,239,0.04);
-      border-radius: 999px;
-      font-size: 12px;
-      color: rgba(245,243,239,0.78);
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 12px; border:1px solid var(--border);
+      background:rgba(255,255,255,0.03); border-radius:999px;
+      font-family:var(--font-body); font-size:12px; font-weight:400;
+      color:rgba(245,243,239,0.70);
     }
-    .pill strong{ color: rgba(245,243,239,0.92); font-weight:700; }
+    .pill strong{ font-weight:600; color:rgba(245,243,239,0.90); }
 
-    .screen{
-      display:none;
-      animation: fadeIn 260ms ease-out;
-    }
+    /* ── Screen transitions ── */
+    .screen{ display:none; animation:fadeUp 220ms ease-out; }
     .screen.active{ display:block; }
-
-    @keyframes fadeIn{
-      from{ opacity:0; transform: translateY(4px); }
-      to{ opacity:1; transform: translateY(0); }
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(6px); }
+      to{ opacity:1; transform:translateY(0); }
     }
 
-    .grid{
-      display:grid;
-      gap: 14px;
-    }
-
+    /* ── Cards ── */
     .card{
-      background: rgba(245,243,239,0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:20px;
     }
-
+    .card + .card{ margin-top:12px; }
     .card h2{
-      margin: 0 0 8px;
-      font-family: "Syne", sans-serif;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: -0.02em;
+      font-family:var(--font-display); font-weight:700; font-size:15px;
+      letter-spacing:-0.01em; margin-bottom:4px;
     }
-    .subtle{
-      color: rgba(245,243,239,0.72);
-      font-size: 13px;
-    }
+    .subtle{ font-size:13px; color:rgba(245,243,239,0.55); font-weight:400; }
 
-    /* Buttons */
-    .btnRow{
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      align-items:center;
-    }
+    /* ── Buttons ── */
     .btn{
-      border:0;
-      cursor:pointer;
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-weight: 700;
-      font-size: 14px;
-      font-family: "DM Sans", sans-serif;
-      transition: transform 0.08s ease, filter 0.15s ease, background 0.15s ease;
-      user-select:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px; padding:10px 18px; border:0; border-radius:12px;
+      font-family:var(--font-display); font-size:13px; font-weight:700;
+      cursor:pointer; transition:all 0.12s ease; user-select:none;
+      white-space:nowrap;
     }
-    .btn:active{ transform: translateY(1px) scale(0.99); }
-
-    .btnPrimary{
-      background: var(--green);
-      color: var(--bg);
-      box-shadow: 0 14px 30px rgba(0,200,122,0.22);
+    .btn:active{ transform:scale(0.98); }
+    .btn-primary{
+      background:var(--green); color:var(--ink);
+      box-shadow:0 8px 24px rgba(0,200,122,0.25);
     }
-    .btnPrimary:hover{ filter: brightness(1.02); }
-
-    .btnGhost{
-      background: rgba(245,243,239,0.05);
-      border: 1px solid var(--border);
-      color: var(--paper);
+    .btn-primary:hover{ filter:brightness(1.05); box-shadow:0 12px 32px rgba(0,200,122,0.35); }
+    .btn-ghost{
+      background:rgba(255,255,255,0.05); border:1px solid var(--border);
+      color:rgba(245,243,239,0.85);
     }
-    .btnGhost:hover{ background: rgba(245,243,239,0.07); }
+    .btn-ghost:hover{ background:rgba(255,255,255,0.08); }
+    .btn-sm{ padding:8px 14px; font-size:12px; border-radius:10px; }
+    .btn-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
-    /* Screen 1 */
+    /* ── Screen 1 — Metrics ── */
     .metrics{
       display:grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap: 12px;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:10px; margin:16px 0;
     }
     .metric{
-      background: rgba(245,243,239,0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px;
+      background:rgba(255,255,255,0.03); border:1px solid var(--border);
+      border-radius:14px; padding:14px;
     }
-    .metric .label{
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      margin-bottom: 8px;
+    .metric .m-label{
+      font-size:11px; font-weight:500; letter-spacing:0.04em;
+      text-transform:uppercase; color:rgba(245,243,239,0.50);
+      margin-bottom:8px;
     }
-    .metric .value{
-      font-family: "Syne", sans-serif;
-      font-weight: 800;
-      font-size: 20px;
-      letter-spacing: -0.02em;
+    .metric .m-value{
+      font-family:var(--font-display); font-weight:800; font-size:22px;
+      letter-spacing:-0.03em; line-height:1;
     }
-    .metric .hint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: rgba(245,243,239,0.64);
+    .metric .m-hint{
+      font-size:12px; color:rgba(245,243,239,0.45); margin-top:6px;
     }
 
-    .barwrap{
-      margin-top: 8px;
-      display:grid;
-      gap: 10px;
+    /* ── Age bars ── */
+    .bars{ display:grid; gap:8px; margin-top:14px; }
+    .bar-row{
+      display:grid; grid-template-columns:76px 1fr 108px;
+      gap:10px; align-items:center;
+      padding:9px 12px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.07);
+      background:rgba(255,255,255,0.025);
     }
-    .barRow{
-      display:grid;
-      grid-template-columns: 90px 1fr 110px;
-      gap: 10px;
-      align-items:center;
-      padding: 8px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(245,243,239,0.10);
-      background: rgba(245,243,239,0.03);
+    .bar-row .b-label{
+      font-family:var(--font-body); font-size:12px; font-weight:500;
+      color:rgba(245,243,239,0.75);
     }
-    .barRow .bucket{
-      font-weight:700;
-      color: rgba(245,243,239,0.86);
-      font-size: 13px;
+    .bar-track{
+      height:8px; border-radius:999px;
+      background:rgba(255,255,255,0.08); overflow:hidden;
     }
-    .bar{
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(245,243,239,0.10);
-      overflow:hidden;
-      position:relative;
+    .bar-fill{
+      height:100%; border-radius:999px;
+      background:rgba(0,200,122,0.50);
+      transition:width 0.6s cubic-bezier(0.16,1,0.3,1);
     }
-    .bar > span{
-      display:block;
-      height:100%;
-      width: 40%;
-      border-radius:999px;
-      background: rgba(0,200,122,0.70);
-    }
-    .barRow.prio .bar > span{ background: rgba(0,200,122,1); }
-    .barRow.prio2 .bar > span{ background: rgba(0,200,122,0.90); }
-    .barRow .amt{
-      font-variant-numeric: tabular-nums;
-      text-align:right;
-      color: rgba(245,243,239,0.82);
-      font-size: 13px;
+    .bar-row.prio .bar-fill{ background:rgba(0,200,122,0.90); }
+    .bar-row.prio2 .bar-fill{ background:rgba(0,200,122,0.75); }
+    .bar-row .b-amt{
+      font-family:var(--font-body); font-size:12px; font-weight:500;
+      color:rgba(245,243,239,0.80); text-align:right;
+      font-variant-numeric:tabular-nums;
     }
 
-    /* Screen 2 */
-    .split{
-      display:grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 14px;
-      align-items:start;
+    /* ── ROI strip ── */
+    .roi-strip{
+      margin-top:12px; padding:14px 16px;
+      border:1px solid rgba(255,77,28,0.22);
+      background:rgba(255,77,28,0.08); border-radius:14px;
     }
-
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      overflow:hidden;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: rgba(245,243,239,0.03);
+    .roi-strip .roi-top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
     }
-    thead th{
-      text-align:left;
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 12px 12px;
-      border-bottom: 1px solid rgba(245,243,239,0.12);
-      background: rgba(245,243,239,0.03);
-      position: sticky;
-      top:0;
-      z-index:1;
-    }
-    tbody td{
-      padding: 12px 12px;
-      border-bottom: 1px solid rgba(245,243,239,0.08);
-      font-size: 14px;
-      color: rgba(245,243,239,0.88);
-      vertical-align: middle;
-    }
-    tbody tr{
-      cursor:pointer;
-      transition: background 0.12s ease;
-    }
-    tbody tr:hover{
-      background: rgba(245,243,239,0.06);
-    }
-    tbody tr.selected{
-      outline: 2px solid rgba(0,200,122,0.55);
-      outline-offset: -2px;
-      background: rgba(0,200,122,0.08);
-    }
-    .tdRight{ text-align:right; font-variant-numeric: tabular-nums; }
-    .tdCenter{ text-align:center; }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      border: 1px solid rgba(245,243,239,0.14);
-      background: rgba(245,243,239,0.05);
-      color: rgba(245,243,239,0.90);
-    }
-    .dot{
-      width:8px; height:8px;
-      border-radius:999px;
-      background: rgba(245,243,239,0.55);
-    }
-    .status-red{ border-color: rgba(255,77,28,0.35); background: rgba(255,77,28,0.10); }
-    .status-red .dot{ background: var(--accent); }
-    .status-yellow{ border-color: rgba(245,213,94,0.35); background: rgba(245,213,94,0.10); }
-    .status-yellow .dot{ background: rgba(245,213,94,0.95); }
-    .status-green{ border-color: rgba(0,200,122,0.35); background: rgba(0,200,122,0.10); }
-    .status-green .dot{ background: var(--green); }
-
-    .panelHeader{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 10px;
-    }
-    .panelHeader h3{
-      margin:0;
-      font-family: "Syne", sans-serif;
-      font-weight: 800;
-      font-size: 15px;
-      letter-spacing: -0.02em;
-    }
-
-    .toneRow{
-      display:flex;
-      gap:8px;
-      flex-wrap: wrap;
-      margin: 10px 0 10px;
-    }
-    .seg{
-      display:flex;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow:hidden;
-      background: rgba(245,243,239,0.03);
-    }
-    .seg button{
-      border:0;
-      cursor:pointer;
-      padding: 10px 10px;
-      background: transparent;
-      color: rgba(245,243,239,0.82);
-      font-weight: 700;
-      font-size: 13px;
-      transition: background 0.12s ease;
-      min-width: 92px;
-      font-family: "DM Sans", sans-serif;
-    }
-    .seg button.active{
-      background: rgba(0,200,122,0.16);
-      color: rgba(245,243,239,0.95);
-    }
-    .seg button:hover{ background: rgba(245,243,239,0.06); }
-
-    .msgPreview{
-      border: 1px solid rgba(245,243,239,0.12);
-      background: rgba(10,10,10,0.25);
-      border-radius: 16px;
-      padding: 12px;
-      min-height: 140px;
-    }
-    .msgPreview .label{
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      margin-bottom: 8px;
-    }
-    .msgBubble{
-      background: rgba(245,243,239,0.92);
-      color: var(--ink);
-      border-radius: 16px;
-      padding: 10px 12px;
-      max-width: 100%;
-      white-space: pre-wrap;
-      font-size: 13px;
-      line-height: 1.35;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-    }
-
-    .smallActions{
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .hintCard{
-      border-radius: 16px;
-      padding: 12px;
-      border: 1px dashed rgba(245,243,239,0.18);
-      background: rgba(245,243,239,0.03);
-      color: rgba(245,243,239,0.74);
-      font-size: 13px;
-    }
-    .hintCard strong{ color: rgba(245,243,239,0.92); }
-
-    /* WhatsApp modal */
-    .modalBackdrop{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.62);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      z-index: 50;
-    }
-    .modalBackdrop.open{ display:flex; }
-
-    .modal{
-      width: min(560px, 100%);
-      border-radius: 22px;
-      border: 1px solid rgba(245,243,239,0.16);
-      background: rgba(10,10,10,0.92);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
-      overflow:hidden;
-    }
-    .modalTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(245,243,239,0.10);
-      background: rgba(245,243,239,0.03);
-    }
-    .modalTop .who{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-    }
-    .modalTop .who .name{
-      font-family:"Syne", sans-serif;
-      font-weight:800;
-      font-size: 14px;
+    .roi-strip .roi-big{
+      font-family:var(--font-display); font-weight:700; font-size:14px;
       letter-spacing:-0.01em;
     }
-    .modalTop .who .meta{
-      font-size: 12px;
-      color: rgba(245,243,239,0.70);
-    }
-    .iconBtn{
-      border: 1px solid rgba(245,243,239,0.14);
-      background: rgba(245,243,239,0.04);
-      color: rgba(245,243,239,0.90);
-      cursor:pointer;
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 800;
-      font-family:"DM Sans", sans-serif;
-    }
-    .iconBtn:hover{ background: rgba(245,243,239,0.06); }
-
-    .chat{
-      background: linear-gradient(180deg, rgba(0,200,122,0.10), rgba(0,200,122,0.02));
-      padding: 14px 14px 18px;
-      min-height: 380px;
-      max-height: 66vh;
-      overflow:auto;
-    }
-    .bubbleRow{
-      display:flex;
-      margin: 10px 0;
-    }
-    .bubbleRow.sent{ justify-content:flex-end; }
-    .bubbleRow.recv{ justify-content:flex-start; }
-    .bubble{
-      max-width: 78%;
-      font-size: 13px;
-      line-height: 1.35;
-      padding: 10px 12px;
-      border-radius: 16px;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.25);
-      white-space: pre-wrap;
-    }
-    .bubble.sent{
-      background: rgba(245,243,239,0.92);
-      color: var(--ink);
-      border-top-right-radius: 6px;
-    }
-    .bubble.recv{
-      background: rgba(245,243,239,0.14);
-      color: rgba(245,243,239,0.92);
-      border-top-left-radius: 6px;
-      border: 1px solid rgba(245,243,239,0.16);
-    }
-    .chatMeta{
-      font-size: 11px;
-      color: rgba(245,243,239,0.62);
-      margin-top: 6px;
+    .roi-strip .roi-big span{ color:var(--paper); }
+    .roi-strip .roi-small{
+      font-size:12px; color:rgba(245,243,239,0.60);
+      margin-top:6px; line-height:1.4;
     }
 
-    /* Screen 3 */
-    .results{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 12px;
-    }
-    .resultBox{
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 12px;
-      background: rgba(245,243,239,0.04);
-    }
-    .resultBox .label{
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      margin-bottom: 8px;
-    }
-    .resultBox .value{
-      font-family: "Syne", sans-serif;
-      font-weight: 800;
-      font-size: 20px;
-      letter-spacing: -0.02em;
-    }
-    .resultBox.green{ border-color: rgba(0,200,122,0.34); background: rgba(0,200,122,0.10); }
-    .resultBox.yellow{ border-color: rgba(245,213,94,0.30); background: rgba(245,213,94,0.10); }
-    .resultBox.gray{ border-color: rgba(245,243,239,0.12); background: rgba(245,243,239,0.03); }
-
-    .timeline{
-      display:grid;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .tlItem{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(245,243,239,0.10);
-      background: rgba(245,243,239,0.03);
-    }
-    .tlItem .name{
-      font-weight: 800;
-      color: rgba(245,243,239,0.92);
-    }
-    .steps{
-      font-size: 12px;
-      color: rgba(245,243,239,0.74);
-      margin-top: 6px;
-    }
-    .steps .ok{ color: rgba(0,200,122,0.95); font-weight: 800; }
-    .steps .warn{ color: rgba(245,213,94,0.95); font-weight: 800; }
-    .steps .muted{ color: rgba(245,243,239,0.62); }
-
-    .callout{
-      margin-top: 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(0,200,122,0.35);
-      background: rgba(0,200,122,0.12);
-      padding: 14px;
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
-    }
-    .callout strong{
-      font-family:"Syne", sans-serif;
-      font-weight: 800;
-      letter-spacing:-0.02em;
+    /* ── Screen 2 ── */
+    .split{
+      display:grid; grid-template-columns:1.2fr 0.8fr;
+      gap:14px; align-items:start; margin-top:14px;
     }
 
-    /* Footer ROI */
-    .roi{
-      margin-top: 14px;
-      border: 1px solid rgba(255,77,28,0.25);
-      background: rgba(255,77,28,0.10);
-      border-radius: 18px;
-      padding: 12px;
-      color: rgba(245,243,239,0.90);
+    /* Table */
+    .table-wrap{ overflow:hidden; border-radius:var(--radius); border:1px solid var(--border); }
+    table{ width:100%; border-collapse:collapse; }
+    thead th{
+      font-family:var(--font-body); font-size:11px; font-weight:600;
+      letter-spacing:0.05em; text-transform:uppercase;
+      color:rgba(245,243,239,0.50); padding:10px 14px;
+      border-bottom:1px solid var(--border); background:rgba(255,255,255,0.03);
+      text-align:left;
     }
-    .roi .top{
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
+    thead th.tc{ text-align:center; }
+    thead th.tr{ text-align:right; }
+    tbody tr{
+      cursor:pointer; transition:background 0.10s ease;
+      border-bottom:1px solid rgba(255,255,255,0.06);
     }
-    .roi .big{
-      font-family:"Syne", sans-serif;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing:-0.02em;
+    tbody tr:last-child{ border-bottom:0; }
+    tbody tr:hover{ background:rgba(255,255,255,0.04); }
+    tbody tr.selected{
+      background:rgba(0,200,122,0.08);
+      outline:1px solid rgba(0,200,122,0.35);
+      outline-offset:-1px;
     }
-    .roi .small{
-      font-size: 12px;
-      color: rgba(245,243,239,0.72);
-      margin-top: 6px;
+    tbody td{
+      font-family:var(--font-body); font-size:13px; font-weight:400;
+      color:rgba(245,243,239,0.85); padding:11px 14px;
+      vertical-align:middle;
+    }
+    td.tc{ text-align:center; }
+    td.tr{ text-align:right; font-variant-numeric:tabular-nums; font-weight:500; }
+
+    /* Badges */
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 10px; border-radius:999px; font-size:11px;
+      font-family:var(--font-body); font-weight:600;
+      border:1px solid var(--border); white-space:nowrap;
+    }
+    .dot{ width:7px; height:7px; border-radius:50%; }
+    .s-red{ border-color:rgba(255,77,28,0.30); background:rgba(255,77,28,0.10); }
+    .s-red .dot{ background:var(--accent); }
+    .s-yellow{ border-color:rgba(245,213,60,0.30); background:rgba(245,213,60,0.10); }
+    .s-yellow .dot{ background:rgba(245,213,60,0.95); }
+    .s-green{ border-color:rgba(0,200,122,0.30); background:rgba(0,200,122,0.10); }
+    .s-green .dot{ background:var(--green); }
+
+    /* Message panel */
+    .msg-panel{ display:flex; flex-direction:column; gap:12px; }
+    .panel-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .panel-head h3{
+      font-family:var(--font-display); font-weight:700; font-size:14px;
+      letter-spacing:-0.01em; line-height:1.2;
+    }
+    .panel-head .p-meta{ font-size:12px; color:rgba(245,243,239,0.50); margin-top:3px; }
+
+    /* Tone segmented control */
+    .tone-seg{
+      display:flex; border:1px solid var(--border);
+      border-radius:10px; overflow:hidden; width:fit-content;
+    }
+    .tone-seg button{
+      border:0; cursor:pointer; padding:8px 14px;
+      background:transparent; color:rgba(245,243,239,0.70);
+      font-family:var(--font-display); font-size:12px; font-weight:600;
+      transition:background 0.10s ease, color 0.10s ease;
+    }
+    .tone-seg button:not(:last-child){ border-right:1px solid var(--border); }
+    .tone-seg button.active{
+      background:rgba(0,200,122,0.15); color:rgba(245,243,239,0.95);
+    }
+    .tone-seg button:hover:not(.active){ background:rgba(255,255,255,0.05); }
+
+    /* WhatsApp preview bubble */
+    .msg-preview{
+      background:rgba(0,0,0,0.30); border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:14px; min-height:120px;
+    }
+    .msg-preview .preview-label{
+      font-size:11px; font-weight:500; letter-spacing:0.04em;
+      text-transform:uppercase; color:rgba(245,243,239,0.40); margin-bottom:10px;
+    }
+    .msg-bubble{
+      background:rgba(245,243,239,0.93); color:var(--ink);
+      border-radius:14px; border-bottom-right-radius:4px;
+      padding:10px 13px; font-family:var(--font-body);
+      font-size:13px; line-height:1.45; white-space:pre-wrap;
+      box-shadow:0 6px 18px rgba(0,0,0,0.22);
+      max-width:96%;
+    }
+    .msg-bubble.placeholder{ color:rgba(10,10,10,0.45); font-style:italic; }
+
+    .hint-card{
+      padding:10px 13px; border:1px dashed rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.02); border-radius:12px;
+      font-size:12px; color:rgba(245,243,239,0.60); line-height:1.4;
+    }
+    .hint-card strong{ color:rgba(245,243,239,0.85); }
+
+    /* Screen 2 nav — bottom bar */
+    .screen2-nav{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px; margin-top:16px; flex-wrap:wrap;
     }
 
-    /* Responsive */
-    @media (max-width: 980px){
-      .metrics{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .split{ grid-template-columns: 1fr; }
-      .results{ grid-template-columns: 1fr; }
+    /* ── Screen 3 ── */
+    .results-grid{
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px; margin:14px 0;
     }
-    @media (max-width: 480px){
-      .metric .value, .resultBox .value{ font-size: 18px; }
-      thead th{ font-size: 11px; }
-      tbody td{ font-size: 13px; }
-      .barRow{ grid-template-columns: 72px 1fr 92px; }
+    .result-box{
+      border-radius:14px; border:1px solid var(--border);
+      background:rgba(255,255,255,0.03); padding:14px;
+    }
+    .result-box .r-label{
+      font-size:11px; font-weight:600; letter-spacing:0.04em;
+      text-transform:uppercase; color:rgba(245,243,239,0.50); margin-bottom:8px;
+    }
+    .result-box .r-value{
+      font-family:var(--font-display); font-weight:800; font-size:22px;
+      letter-spacing:-0.03em; line-height:1;
+    }
+    .result-box .r-sub{
+      font-size:12px; color:rgba(245,243,239,0.50); margin-top:5px;
+    }
+    .result-box.rb-green{ border-color:rgba(0,200,122,0.30); background:rgba(0,200,122,0.08); }
+    .result-box.rb-yellow{ border-color:rgba(245,213,60,0.28); background:rgba(245,213,60,0.08); }
+    .result-box.rb-gray{ border-color:rgba(255,255,255,0.10); }
+
+    .tl-list{ display:grid; gap:8px; margin-top:12px; }
+    .tl-item{
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:10px; padding:10px 14px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.02);
+    }
+    .tl-item .tl-name{
+      font-family:var(--font-display); font-weight:700; font-size:13px;
+      letter-spacing:-0.01em;
+    }
+    .tl-item .tl-desc{
+      font-size:12px; color:rgba(245,243,239,0.55); margin-top:3px;
+    }
+    .tl-steps{ font-size:12px; color:rgba(245,243,239,0.60); margin-top:4px; line-height:1.4; }
+    .tl-steps .ok{ color:rgba(0,200,122,0.95); font-weight:700; }
+    .tl-steps .warn{ color:rgba(245,213,60,0.95); font-weight:700; }
+    .tl-steps .dim{ color:rgba(245,243,239,0.45); }
+
+    .callout-bar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; padding:14px 16px;
+      border:1px solid rgba(0,200,122,0.30);
+      background:rgba(0,200,122,0.10); border-radius:14px;
+      margin-top:12px;
+    }
+    .callout-bar .cb-text{
+      font-family:var(--font-display); font-weight:700; font-size:14px;
+    }
+    .callout-bar .cb-num{
+      color:var(--green); font-size:15px;
+    }
+
+    /* ── WhatsApp modal ── */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,0.65);
+      display:none; align-items:center; justify-content:center;
+      padding:16px; z-index:50;
+    }
+    .modal-backdrop.open{ display:flex; }
+    .modal{
+      width:min(540px,100%); border-radius:20px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(12,12,12,0.95);
+      box-shadow:0 30px 70px rgba(0,0,0,0.60); overflow:hidden;
+    }
+    .modal-top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.025);
+    }
+    .modal-who .mw-name{
+      font-family:var(--font-display); font-weight:700; font-size:14px;
+      letter-spacing:-0.01em;
+    }
+    .modal-who .mw-meta{
+      font-size:11px; color:rgba(245,243,239,0.55); margin-top:2px;
+    }
+    .chat-body{
+      background:linear-gradient(180deg, rgba(0,200,122,0.09) 0%, rgba(0,200,122,0.03) 100%);
+      padding:16px; min-height:360px; max-height:60vh; overflow-y:auto;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .chat-sys{
+      text-align:center; font-size:11px;
+      color:rgba(245,243,239,0.45); margin-bottom:4px;
+    }
+    .bubble-row{ display:flex; }
+    .bubble-row.sent{ justify-content:flex-end; }
+    .bubble-row.recv{ justify-content:flex-start; }
+    .chat-bubble{
+      max-width:80%; padding:10px 13px; border-radius:16px;
+      font-family:var(--font-body); font-size:13px; line-height:1.4;
+      white-space:pre-wrap; box-shadow:0 4px 12px rgba(0,0,0,0.25);
+    }
+    .chat-bubble.sent{
+      background:rgba(245,243,239,0.94); color:var(--ink);
+      border-bottom-right-radius:4px;
+    }
+    .chat-bubble.recv{
+      background:rgba(255,255,255,0.10); color:rgba(245,243,239,0.90);
+      border:1px solid rgba(255,255,255,0.12); border-bottom-left-radius:4px;
+    }
+
+    /* ── Responsive ── */
+    @media(max-width:900px){
+      .metrics{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .split{ grid-template-columns:1fr; }
+      .results-grid{ grid-template-columns:1fr; }
+    }
+    @media(max-width:480px){
+      .metric .m-value{ font-size:18px; }
+      .result-box .r-value{ font-size:18px; }
+      .bar-row{ grid-template-columns:60px 1fr 86px; }
+      thead th{ font-size:10px; padding:8px 10px; }
+      tbody td{ font-size:12px; padding:9px 10px; }
     }
   </style>
 </head>
-
 <body>
-  <div class="app">
-    <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="titleblock">
-          <div class="kicker">Ventia</div>
-          <h1>COBROSMART — Demo</h1>
-        </div>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="9" fill="#0a0a0a"/>
+        <path d="M6 22 L12 12 L16 18 L20 9 L26 9" stroke="#00c87a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="26" cy="9" r="2.2" fill="#00c87a"/>
+      </svg>
+      <div class="brand-text">
+        <div class="kicker">Ventia</div>
+        <h1>COBROSMART — Demo</h1>
       </div>
-
-      <div class="headerRight">
-        <div class="pill"><strong>Negocio:</strong> El Puente (Azul, BA)</div>
-        <div class="pill"><strong>Dueño:</strong> Gustavo “Tavo” Ibarra</div>
-      </div>
-    </header>
-
-    <!-- SCREEN 1 -->
-    <section id="screen1" class="screen active">
-      <div class="grid">
-        <div class="card">
-          <h2>Resumen de deuda y foco</h2>
-          <div class="subtle">Vista rápida para decidir dónde cobrar primero (datos ficticios).</div>
-
-          <div class="metrics" style="margin-top:12px;">
-            <div class="metric">
-              <div class="label">Vencido total</div>
-              <div class="value">$7.980.000</div>
-              <div class="hint">Cuenta corriente vencida</div>
-            </div>
-            <div class="metric">
-              <div class="label">Deudores vencidos</div>
-              <div class="value">33</div>
-              <div class="hint">+7 días</div>
-            </div>
-            <div class="metric">
-              <div class="label">Vencido 31+ días</div>
-              <div class="value">$4.310.000</div>
-              <div class="hint">Foco de recuperación</div>
-            </div>
-            <div class="metric">
-              <div class="label">Promesas activas</div>
-              <div class="value">1</div>
-              <div class="hint">Seguimiento automático</div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:14px; background: rgba(245,243,239,0.03); box-shadow:none;">
-            <h2 style="margin-bottom:6px;">Distribución por antigüedad</h2>
-            <div class="subtle">Las de 31+ días se priorizan (verde más intenso).</div>
-
-            <div class="barwrap" id="ageBars" aria-label="Gráfico por antigüedad"></div>
-          </div>
-
-          <div class="btnRow" style="margin-top:14px;">
-            <button class="btn btnPrimary" id="btnStart">
-              Iniciar campaña de cobro →
-            </button>
-            <button class="btn btnGhost" id="btnJumpToResults" title="Atajo para demo presencial">
-              Saltar a resultados (atajo)
-            </button>
-          </div>
-        </div>
-
-        <div class="roi">
-          <div class="top">
-            <div class="big">ROI de la demo: recuperable conservador 30 días (20%) → <span style="color:var(--paper);">$862.000</span></div>
-            <div class="pill" style="border-color: rgba(255,77,28,0.25); background: rgba(255,77,28,0.08);">
-              <strong>Vencido 31+:</strong> $4.310.000
-            </div>
-          </div>
-          <div class="small">
-            Con que recuperes una deuda media de <strong>$180.000–$250.000</strong> en el mes, esto ya se pagó varias veces.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 2 -->
-    <section id="screen2" class="screen">
-      <div class="grid">
-        <div class="card">
-          <div class="panelHeader">
-            <div>
-              <h2>Lista priorizada + mensaje sugerido</h2>
-              <div class="subtle">Hacé click en un deudor para ver el mensaje listo para WhatsApp.</div>
-            </div>
-            <div class="btnRow">
-              <button class="btn btnGhost" id="btnBack1">← Volver</button>
-              <button class="btn btnPrimary" id="btnTo3">Ver resultados →</button>
-            </div>
-          </div>
-
-          <div class="split">
-            <div>
-              <table aria-label="Tabla de deudores">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th class="tdCenter">Días vencido</th>
-                    <th class="tdRight">Monto</th>
-                    <th class="tdCenter">Estado</th>
-                  </tr>
-                </thead>
-                <tbody id="debtorsTbody"></tbody>
-              </table>
-
-              <div class="hintCard" style="margin-top:12px;">
-                Tip: en una demo guiada, empezá por <strong>31+ días</strong> (más recuperable) y dejá “prometió” para mostrar seguimiento automático.
-              </div>
-            </div>
-
-            <div class="card" style="margin:0; background: rgba(245,243,239,0.03); box-shadow:none;">
-              <div class="panelHeader">
-                <div>
-                  <h3 id="panelName">Seleccioná un deudor</h3>
-                  <div class="subtle" id="panelMeta">Vas a ver el mensaje sugerido y la conversación simulada.</div>
-                </div>
-                <button class="iconBtn" id="btnConversation" disabled>Ver conversación</button>
-              </div>
-
-              <div class="toneRow">
-                <div class="subtle" style="margin-right:6px;">Tono:</div>
-                <div class="seg" role="tablist" aria-label="Selector de tono">
-                  <button id="toneAmable" class="" type="button">Amable</button>
-                  <button id="toneDirecto" class="" type="button">Directo</button>
-                  <button id="toneUltimo" class="" type="button">Último aviso</button>
-                </div>
-              </div>
-
-              <div class="msgPreview">
-                <div class="label">Preview WhatsApp (listo para enviar)</div>
-                <div class="msgBubble" id="msgBubble">Elegí un deudor para ver el mensaje sugerido.</div>
-              </div>
-
-              <div class="smallActions">
-                <button class="btn btnGhost" id="btnCopy" disabled>Copiar texto</button>
-                <button class="btn btnGhost" id="btnMarkSent" disabled>Marcar como “Enviado” (simulado)</button>
-              </div>
-
-              <div class="hintCard" style="margin-top:12px;">
-                COBROSMART ajusta el tono según antigüedad y comportamiento (ignoró / prometió / sin contacto).
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 3 -->
-    <section id="screen3" class="screen">
-      <div class="grid">
-        <div class="card">
-          <div class="panelHeader">
-            <div>
-              <h2>Resultado del día</h2>
-              <div class="subtle">Resumen automático después de la campaña (simulado).</div>
-            </div>
-            <div class="btnRow">
-              <button class="btn btnGhost" id="btnBack2">← Volver a mensajes</button>
-              <button class="btn btnPrimary" id="btnHome">← Volver al inicio</button>
-            </div>
-          </div>
-
-          <div class="results">
-            <div class="resultBox green">
-              <div class="label">Pagaron</div>
-              <div class="value">$186.900</div>
-              <div class="subtle">Nico Barrionuevo</div>
-            </div>
-            <div class="resultBox yellow">
-              <div class="label">Prometieron</div>
-              <div class="value">$78.300</div>
-              <div class="subtle">Mariela Sosa — viernes 9:30</div>
-            </div>
-            <div class="resultBox gray">
-              <div class="label">Sin respuesta</div>
-              <div class="value">$910.400</div>
-              <div class="subtle">Obras Rivas + Cuadrilla Los Hermanos</div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:14px; background: rgba(245,243,239,0.03); box-shadow:none;">
-            <h2 style="margin-bottom:6px;">Mini ranking (estado actualizado)</h2>
-            <div class="subtle">Quién pagó, quién prometió y a quién seguir mañana.</div>
-
-            <div id="ranking" class="timeline" aria-label="Ranking de deudores"></div>
-          </div>
-
-          <div class="card" style="margin-top:14px; background: rgba(245,243,239,0.03); box-shadow:none;">
-            <h2 style="margin-bottom:6px;">Línea de tiempo simplificada</h2>
-            <div class="subtle">Cada deudor recorre pasos: enviado → respuesta → resultado.</div>
-            <div id="timeline" class="timeline" aria-label="Timeline de resultados"></div>
-          </div>
-
-          <div class="callout">
-            <div>
-              <strong>Acciones automáticas programadas para mañana:</strong>
-              <span style="margin-left:8px; color: rgba(245,243,239,0.92); font-weight:800;">2 seguimientos</span>
-            </div>
-            <div class="pill" style="border-color: rgba(0,200,122,0.30); background: rgba(0,200,122,0.10);">
-              <strong>Automático</strong> (sin backend, demo)
-            </div>
-          </div>
-        </div>
-
-        <div class="roi">
-          <div class="top">
-            <div class="big">Momento ROI: con 1 deuda media recuperada, se paga solo.</div>
-            <div class="pill"><strong>Recuperable 30 días:</strong> $862.000</div>
-          </div>
-          <div class="small">
-            “Con que recuperes una deuda media de $180.000–$250.000 en el mes, esto ya se pagó varias veces.”
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- WhatsApp conversation modal -->
-  <div class="modalBackdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Conversación WhatsApp simulada">
-    <div class="modal">
-      <div class="modalTop">
-        <div class="who">
-          <div class="name" id="chatName">—</div>
-          <div class="meta" id="chatMeta">Simulación WhatsApp</div>
-        </div>
-        <button class="iconBtn" id="btnCloseModal">Cerrar</button>
-      </div>
-      <div class="chat" id="chatBody"></div>
     </div>
+    <div class="pills">
+      <div class="pill"><strong>Negocio:</strong> El Puente (Azul, BA)</div>
+      <div class="pill"><strong>Dueño:</strong> Gustavo "Tavo" Ibarra</div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1 — RESUMEN DE DEUDA
+  ══════════════════════════════════════ -->
+  <section id="s1" class="screen active">
+    <div class="card">
+      <h2>Resumen de deuda y foco</h2>
+      <div class="subtle">Vista rápida para decidir dónde cobrar primero — datos ficticios.</div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="m-label">Vencido total</div>
+          <div class="m-value">$7.980.000</div>
+          <div class="m-hint">Cuenta corriente</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Deudores vencidos</div>
+          <div class="m-value">33</div>
+          <div class="m-hint">+7 días</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Vencido 31+ días</div>
+          <div class="m-value">$4.310.000</div>
+          <div class="m-hint">Foco de recuperación</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Promesas activas</div>
+          <div class="m-value">1</div>
+          <div class="m-hint">Seguimiento auto</div>
+        </div>
+      </div>
+
+      <div class="card" style="background:rgba(255,255,255,0.02); box-shadow:none; border-color:rgba(255,255,255,0.07);">
+        <h2>Distribución por antigüedad</h2>
+        <div class="subtle" style="margin-bottom:4px;">Las franjas de 31+ días se priorizan (verde más intenso).</div>
+        <div class="bars" id="ageBars"></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-primary" id="btnStart">Iniciar campaña de cobro →</button>
+        <button class="btn btn-ghost" id="btnJump">Saltar a resultados</button>
+      </div>
+    </div>
+
+    <div class="roi-strip">
+      <div class="roi-top">
+        <div class="roi-big">ROI conservador 30 días (20%) → <span>$862.000</span></div>
+        <div class="pill" style="border-color:rgba(255,77,28,0.22); background:rgba(255,77,28,0.07);">
+          <strong>Vencido 31+:</strong> $4.310.000
+        </div>
+      </div>
+      <div class="roi-small">Con que recuperés una deuda media de <strong style="color:rgba(245,243,239,0.85);">$180.000–$250.000</strong> en el mes, esto ya se pagó varias veces.</div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 2 — LISTA + MENSAJE
+  ══════════════════════════════════════ -->
+  <section id="s2" class="screen">
+    <div class="card">
+      <h2>Lista priorizada + mensaje sugerido</h2>
+      <div class="subtle">Hacé click en un deudor para ver el mensaje listo para WhatsApp.</div>
+
+      <div class="split">
+        <!-- Tabla -->
+        <div>
+          <div class="table-wrap">
+            <table aria-label="Deudores">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th class="tc">Días</th>
+                  <th class="tr">Monto</th>
+                  <th class="tc">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="debtorsTbody"></tbody>
+            </table>
+          </div>
+          <div class="hint-card" style="margin-top:10px;">
+            Tip: en una demo guiada, empezá por <strong>31+ días</strong> y dejá "prometió" para mostrar el seguimiento automático.
+          </div>
+        </div>
+
+        <!-- Panel mensaje -->
+        <div class="msg-panel card" style="margin:0; background:rgba(255,255,255,0.02); box-shadow:none; border-color:rgba(255,255,255,0.07);">
+          <div class="panel-head">
+            <div>
+              <h3 id="panelName">Seleccioná un deudor</h3>
+              <div class="p-meta" id="panelMeta">Vas a ver el mensaje sugerido y la conversación.</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btnConv" disabled>Ver conversación</button>
+          </div>
+
+          <div>
+            <div class="subtle" style="margin-bottom:6px; font-size:11px; text-transform:uppercase; letter-spacing:0.05em;">Tono del mensaje</div>
+            <div class="tone-seg" role="group" aria-label="Tono">
+              <button id="tA" type="button">Amable</button>
+              <button id="tD" type="button">Directo</button>
+              <button id="tU" type="button">Último aviso</button>
+            </div>
+          </div>
+
+          <div class="msg-preview">
+            <div class="preview-label">Preview WhatsApp</div>
+            <div class="msg-bubble placeholder" id="msgBubble">Elegí un deudor para ver el mensaje.</div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" id="btnCopy" disabled>Copiar texto</button>
+            <button class="btn btn-ghost btn-sm" id="btnSent" disabled>Marcar enviado</button>
+          </div>
+
+          <div class="hint-card">
+            COBROSMART ajusta el tono según antigüedad y comportamiento — <strong>ignoró / prometió / sin contacto.</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav bottom -->
+      <div class="screen2-nav">
+        <button class="btn btn-ghost" id="btnBack1">← Volver</button>
+        <button class="btn btn-primary" id="btnTo3">Ver resultados →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 3 — RESULTADO DEL DÍA
+  ══════════════════════════════════════ -->
+  <section id="s3" class="screen">
+    <div class="card">
+      <h2>Resultado del día</h2>
+      <div class="subtle">Resumen automático después de la campaña — simulado.</div>
+
+      <div class="results-grid">
+        <div class="result-box rb-green">
+          <div class="r-label">Pagaron</div>
+          <div class="r-value">$186.900</div>
+          <div class="r-sub">Nico Barrionuevo</div>
+        </div>
+        <div class="result-box rb-yellow">
+          <div class="r-label">Prometieron</div>
+          <div class="r-value">$78.300</div>
+          <div class="r-sub">Mariela Sosa — viernes 9:30</div>
+        </div>
+        <div class="result-box rb-gray">
+          <div class="r-label">Sin respuesta</div>
+          <div class="r-value">$910.400</div>
+          <div class="r-sub">Obras Rivas + Cuadrilla Los Hermanos</div>
+        </div>
+      </div>
+
+      <div class="card" style="background:rgba(255,255,255,0.02); box-shadow:none; border-color:rgba(255,255,255,0.07);">
+        <h2>Estado actualizado</h2>
+        <div class="subtle">Quién pagó, quién prometió y a quién seguir mañana.</div>
+        <div class="tl-list" id="ranking"></div>
+      </div>
+
+      <div class="card" style="background:rgba(255,255,255,0.02); box-shadow:none; border-color:rgba(255,255,255,0.07); margin-top:10px;">
+        <h2>Línea de tiempo</h2>
+        <div class="subtle">Cada deudor: enviado → respuesta → resultado.</div>
+        <div class="tl-list" id="timeline"></div>
+      </div>
+
+      <div class="callout-bar">
+        <div>
+          <span class="cb-text">Acciones automáticas programadas para mañana: </span>
+          <span class="cb-num">2 seguimientos</span>
+        </div>
+        <div class="pill" style="border-color:rgba(0,200,122,0.28); background:rgba(0,200,122,0.08);">
+          Sin backend — demo
+        </div>
+      </div>
+
+      <div class="roi-strip" style="margin-top:12px;">
+        <div class="roi-top">
+          <div class="roi-big">Momento ROI: con 1 deuda media recuperada, <span>se paga solo.</span></div>
+          <div class="pill"><strong>Recuperable 30 días:</strong> $862.000</div>
+        </div>
+        <div class="roi-small">"Con que recuperés una deuda media de $180.000–$250.000 en el mes, esto ya se pagó varias veces."</div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-ghost" id="btnBack2">← Volver a mensajes</button>
+        <button class="btn btn-ghost" id="btnHome">← Volver al inicio</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- WhatsApp Modal -->
+<div class="modal-backdrop" id="modalBg" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-who">
+        <div class="mw-name" id="chatName">—</div>
+        <div class="mw-meta">Simulación WhatsApp · solo demo</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnClose">Cerrar</button>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
   </div>
+</div>
 
-  <script>
-    // ---------- Data (hardcoded) ----------
-    const moneyARS = (v) => {
-      // v is number in ARS
-      const s = Math.round(v).toString();
-      const withDots = s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      return "$" + withDots;
-    };
+<script>
+  /* ── Data ── */
+  const fmt = n => "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
 
-    const ageBuckets = [
-      { key: "0–15d", amount: 1620000, prio: false },
-      { key: "16–30d", amount: 2050000, prio: false },
-      { key: "31–60d", amount: 1880000, prio: true },   // green more intense
-      { key: "61+d", amount: 2430000, prio: true }
+  const buckets = [
+    { key:"0–15d",  amount:1620000, cls:"" },
+    { key:"16–30d", amount:2050000, cls:"" },
+    { key:"31–60d", amount:1880000, cls:"prio2" },
+    { key:"61+d",   amount:2430000, cls:"prio" }
+  ];
+
+  const debtors = [
+    {
+      id:"rivas", name:"Obras Rivas", days:74, amount:612400,
+      status:"Ignoró", sc:"red", defaultTone:"ultimo",
+      messages:{
+        amable:`Buenas, ¿cómo va? Les escribo por la cuenta del corralón: quedó pendiente ${fmt(612400)} (vencida hace 74 días). ¿Me confirman cuándo lo pueden regularizar así lo dejamos ordenado?`,
+        directo:`Buenas, por la cuenta: quedó pendiente ${fmt(612400)} (74 días). Necesito una fecha concreta para dejarlo agendado. ¿Qué día lo pueden saldar?`,
+        ultimo:`Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y me mandan comprobante cuando puedan.`
+      },
+      conv:{
+        amable:[
+          {who:"sent", text:`Hola, ¿cómo va? Les escribo por la cuenta del corralón. Quedó pendiente ${fmt(612400)} (74 días). ¿Me confirman cuándo lo pueden regularizar?`},
+          {who:"recv", text:"Dale, lo veo y te aviso."},
+          {who:"sent", text:"Perfecto. Con una fecha lo dejamos agendado y listo."},
+          {who:"recv", text:"…"}
+        ],
+        directo:[
+          {who:"sent", text:`Buenas, por la cuenta: quedó pendiente ${fmt(612400)} (74 días). Necesito fecha concreta de pago. ¿Qué día lo pueden saldar?`},
+          {who:"recv", text:"Lo reviso."},
+          {who:"sent", text:"Gracias. Me sirve una fecha para cerrar la cuenta."}
+        ],
+        ultimo:[
+          {who:"sent", text:`Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y mándenme comprobante cuando puedan.`},
+          {who:"recv", text:"…"},
+          {who:"sent", text:"Te leo cuando me confirmes una fecha."}
+        ]
+      }
+    },
+    {
+      id:"nico", name:"Nico Barrionuevo (Albañil)", days:19, amount:186900,
+      status:"Prometió", sc:"green", defaultTone:"amable",
+      messages:{
+        amable:`Hola Nico, ¿cómo va? Te escribo por la cuenta del corralón: quedó pendiente ${fmt(186900)} de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy así te lo dejo al día?`,
+        directo:`Hola Nico, quedó pendiente ${fmt(186900)} (19 días). ¿Lo podés regularizar hoy? Así lo dejo cerrado.`,
+        ultimo:`Hola Nico, vuelvo por la cuenta pendiente de ${fmt(186900)}. Necesito confirmación de pago hoy o una fecha concreta.`
+      },
+      conv:{
+        amable:[
+          {who:"sent", text:`Hola Nico, ¿cómo va? Quedó pendiente ${fmt(186900)} de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy?`},
+          {who:"recv", text:"Sí, hoy a la tarde lo paso por transferencia."},
+          {who:"sent", text:"Genial, cuando tengas el comprobante me lo mandás y lo cierro."},
+          {who:"recv", text:"Listo, ahí va. ✅"}
+        ],
+        directo:[
+          {who:"sent", text:`Hola Nico, quedó pendiente ${fmt(186900)} (19 días). ¿Lo podés regularizar hoy?`},
+          {who:"recv", text:"Sí, lo hago ahora."},
+          {who:"sent", text:"Perfecto, pasame comprobante y queda cerrado."}
+        ],
+        ultimo:[
+          {who:"sent", text:`Hola Nico, vuelvo por la cuenta pendiente de ${fmt(186900)}. Necesito confirmación hoy o fecha concreta.`},
+          {who:"recv", text:"Hoy lo pago, tranqui."}
+        ]
+      }
+    },
+    {
+      id:"mariela", name:"Mariela Sosa", days:11, amount:78300,
+      status:"Sin contacto", sc:"yellow", defaultTone:"amable",
+      messages:{
+        amable:`Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente ${fmt(78300)}. ¿Lo podés resolver hoy o preferís que lo dejemos para mañana?`,
+        directo:`Hola Mariela, quedó pendiente ${fmt(78300)} (11 días). ¿Me confirmás si lo podés abonar hoy o mañana?`,
+        ultimo:`Hola Mariela, vuelvo por el saldo pendiente de ${fmt(78300)}. Necesito que me confirmes fecha de pago.`
+      },
+      conv:{
+        amable:[
+          {who:"sent", text:`Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente ${fmt(78300)}. ¿Lo podés resolver hoy o preferís mañana?`},
+          {who:"recv", text:"Gracias, me re colgué. ¿Puede ser el viernes a las 9:30?"},
+          {who:"sent", text:"Sí, perfecto. Lo agendo para viernes 9:30. 🙌"}
+        ],
+        directo:[
+          {who:"sent", text:`Hola Mariela, quedó pendiente ${fmt(78300)} (11 días). ¿Lo podés abonar hoy o mañana?`},
+          {who:"recv", text:"El viernes a la mañana."},
+          {who:"sent", text:"Dale, ¿te va 9:30 así lo dejo agendado?"},
+          {who:"recv", text:"Sí, 9:30."}
+        ],
+        ultimo:[
+          {who:"sent", text:`Hola Mariela, vuelvo por el saldo de ${fmt(78300)}. Dame fecha de pago para agendarlo.`},
+          {who:"recv", text:"El viernes 9:30."},
+          {who:"sent", text:"Listo, agendado. Gracias."}
+        ]
+      }
+    },
+    {
+      id:"hermanos", name:'Cuadrilla "Los Hermanos"', days:46, amount:298000,
+      status:"Ignoró", sc:"red", defaultTone:"directo",
+      messages:{
+        amable:`Hola, ¿cómo andan? Les escribo por la cuenta del corralón: quedó pendiente ${fmt(298000)} (46 días). ¿Me confirman qué fecha les queda cómoda para regularizar?`,
+        directo:`Hola, les escribo por la cuenta: quedó pendiente ${fmt(298000)} (vencida hace 46 días). ¿Me confirman cuándo lo pueden regularizar?`,
+        ultimo:`Hola, vuelvo por el saldo de ${fmt(298000)} (46 días). Necesito fecha de pago hoy para agendarlo, o comprobante si ya lo abonaron.`
+      },
+      conv:{
+        amable:[
+          {who:"sent", text:`Hola, ¿cómo andan? Quedó pendiente ${fmt(298000)} (46 días). ¿Me confirman qué fecha les queda cómoda?`},
+          {who:"recv", text:"…"},
+          {who:"sent", text:"Con una fecha lo dejamos ordenado y listo."}
+        ],
+        directo:[
+          {who:"sent", text:`Hola, quedó pendiente ${fmt(298000)} (46 días). ¿Cuándo lo pueden regularizar?`},
+          {who:"recv", text:"…"},
+          {who:"sent", text:"Si ya lo abonaron, me mandan comprobante cuando puedan."}
+        ],
+        ultimo:[
+          {who:"sent", text:`Hola, vuelvo por el saldo de ${fmt(298000)} (46 días). Necesito fecha hoy para agendarlo, o comprobante si ya lo pagaron.`},
+          {who:"recv", text:"…"},
+          {who:"sent", text:"Si hoy me confirman fecha, lo dejo agendado y listo."}
+        ]
+      }
+    }
+  ];
+
+  /* ── Helpers ── */
+  const $  = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const esc = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+
+  function showScreen(n){
+    $$(".screen").forEach(s=>s.classList.remove("active"));
+    $("#s"+n).classList.add("active");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function badge(sc, text){
+    const cls = sc==="red"?"s-red": sc==="green"?"s-green":"s-yellow";
+    return `<span class="badge ${cls}"><span class="dot"></span>${esc(text)}</span>`;
+  }
+
+  /* ── Render bars ── */
+  function renderBars(){
+    const max = Math.max(...buckets.map(b=>b.amount));
+    const el = $("#ageBars");
+    el.innerHTML = "";
+    buckets.forEach(b=>{
+      const pct = Math.max(6, Math.round(b.amount/max*100));
+      el.insertAdjacentHTML("beforeend",`
+        <div class="bar-row ${b.cls}">
+          <div class="b-label">${b.key}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="b-amt">${fmt(b.amount)}</div>
+        </div>`);
+    });
+  }
+
+  /* ── Render table ── */
+  function renderTable(){
+    const tbody = $("#debtorsTbody");
+    tbody.innerHTML = "";
+    debtors.forEach(d=>{
+      const tr = document.createElement("tr");
+      tr.dataset.id = d.id;
+      tr.innerHTML = `
+        <td>${esc(d.name)}</td>
+        <td class="tc">${d.days}</td>
+        <td class="tr">${fmt(d.amount)}</td>
+        <td class="tc">${badge(d.sc, d.status)}</td>`;
+      tr.addEventListener("click",()=>selectDebtor(d.id));
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ── Render screen 3 ── */
+  function renderS3(){
+    const rankData = [
+      {name:"Nico Barrionuevo", badge:badge("green","Pagó"),          desc:fmt(186900)},
+      {name:"Mariela Sosa",     badge:badge("yellow","Prometió"),      desc:fmt(78300)+" · viernes 9:30"},
+      {name:"Obras Rivas",      badge:badge("red","Sin respuesta"),    desc:"Seguimiento programado"},
+      {name:'Cuadrilla "Los Hermanos"', badge:badge("red","Sin respuesta"), desc:"Seguimiento programado"}
     ];
+    $("#ranking").innerHTML = rankData.map(r=>`
+      <div class="tl-item">
+        <div><div class="tl-name">${esc(r.name)}</div><div class="tl-desc">${esc(r.desc)}</div></div>
+        <div>${r.badge}</div>
+      </div>`).join("");
 
-    const debtors = [
-      {
-        id: "rivas",
-        name: "Obras Rivas",
-        days: 74,
-        amount: 612400,
-        status: "Ignoró",
-        statusColor: "red",
-        defaultTone: "ultimo",
-        messages: {
-          amable: "Buenas, ¿cómo va? Te escribo por la cuenta del corralón: quedó pendiente " + moneyARS(612400) + " (vencida hace 74 días). ¿Me confirmás cuándo lo pueden regularizar así lo dejamos ordenado?",
-          directo: "Buenas, por la cuenta del corralón: quedó pendiente " + moneyARS(612400) + " (74 días). Necesito fecha concreta de pago para dejarlo agendado. ¿Qué día lo pueden saldar?",
-          ultimo: "Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y me mandan comprobante cuando puedan."
-        },
-        conversation: {
-          amable: [
-            { who: "sent", text: "Hola, ¿cómo va? Te escribo por la cuenta del corralón. Quedó pendiente " + moneyARS(612400) + " (vencida hace 74 días). ¿Me confirmás cuándo lo pueden regularizar?" },
-            { who: "recv", text: "Dale, lo veo y te aviso." },
-            { who: "sent", text: "Perfecto, gracias. Con una fecha lo dejamos agendado y listo." },
-            { who: "recv", text: "…" }
-          ],
-          directo: [
-            { who: "sent", text: "Buenas, por la cuenta del corralón: quedó pendiente " + moneyARS(612400) + " (74 días). Necesito fecha concreta de pago. ¿Qué día lo pueden saldar?" },
-            { who: "recv", text: "Lo reviso." },
-            { who: "sent", text: "Gracias. Me sirve una fecha concreta para cerrar la cuenta." }
-          ],
-          ultimo: [
-            { who: "sent", text: "Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y me mandan comprobante cuando puedan." },
-            { who: "recv", text: "…" },
-            { who: "sent", text: "Te leo cuando me confirmes una fecha. Así evitamos idas y vueltas." }
-          ]
-        }
-      },
-      {
-        id: "nico",
-        name: "Nico Barrionuevo (Albañil)",
-        days: 19,
-        amount: 186900,
-        status: "Prometió",
-        statusColor: "green",
-        defaultTone: "amable",
-        messages: {
-          amable: "Hola Nico, ¿cómo va? Te escribo por la cuenta del corralón: quedó pendiente " + moneyARS(186900) + " de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy así te lo dejo al día?",
-          directo: "Hola Nico, te escribo por la cuenta del corralón: quedó pendiente " + moneyARS(186900) + " (19 días). ¿Lo podés regularizar hoy? Así lo dejo cerrado.",
-          ultimo: "Hola Nico, vuelvo por la cuenta pendiente de " + moneyARS(186900) + ". Necesito confirmación de pago hoy o una fecha concreta para dejarlo agendado."
-        },
-        conversation: {
-          amable: [
-            { who: "sent", text: "Hola Nico, ¿cómo va? Quedó pendiente " + moneyARS(186900) + " de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy así te lo dejo al día?" },
-            { who: "recv", text: "Sí, hoy a la tarde lo paso por transferencia." },
-            { who: "sent", text: "Genial, gracias. Cuando tengas el comprobante me lo mandás y lo cierro." },
-            { who: "recv", text: "Listo, ahí te va. ✅" }
-          ],
-          directo: [
-            { who: "sent", text: "Hola Nico, quedó pendiente " + moneyARS(186900) + " (19 días). ¿Lo podés regularizar hoy?" },
-            { who: "recv", text: "Sí, lo hago ahora." },
-            { who: "sent", text: "Perfecto, pasame comprobante y queda cerrado." }
-          ],
-          ultimo: [
-            { who: "sent", text: "Hola Nico, vuelvo por la cuenta pendiente de " + moneyARS(186900) + ". Necesito confirmación de pago hoy o una fecha concreta." },
-            { who: "recv", text: "Hoy lo pago, tranqui." }
-          ]
-        }
-      },
-      {
-        id: "mariela",
-        name: "Mariela Sosa",
-        days: 11,
-        amount: 78300,
-        status: "Sin contacto",
-        statusColor: "yellow",
-        defaultTone: "amable",
-        messages: {
-          amable: "Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente " + moneyARS(78300) + ". ¿Lo podés resolver hoy o preferís que lo dejemos para mañana?",
-          directo: "Hola Mariela, quedó pendiente " + moneyARS(78300) + " (11 días). ¿Me confirmás si lo podés abonar hoy o mañana?",
-          ultimo: "Hola Mariela, vuelvo por el saldo pendiente de " + moneyARS(78300) + ". Necesito que me confirmes fecha de pago para agendarlo."
-        },
-        conversation: {
-          amable: [
-            { who: "sent", text: "Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente " + moneyARS(78300) + ". ¿Lo podés resolver hoy o preferís que lo dejemos para mañana?" },
-            { who: "recv", text: "Gracias, me re colgué. ¿Puede ser el viernes a las 9:30?" },
-            { who: "sent", text: "Sí, perfecto. Lo agendo para viernes 9:30. 🙌" }
-          ],
-          directo: [
-            { who: "sent", text: "Hola Mariela, quedó pendiente " + moneyARS(78300) + " (11 días). ¿Lo podés abonar hoy o mañana?" },
-            { who: "recv", text: "El viernes a la mañana." },
-            { who: "sent", text: "Dale, ¿te va 9:30 así lo dejo agendado?" },
-            { who: "recv", text: "Sí, 9:30." }
-          ],
-          ultimo: [
-            { who: "sent", text: "Hola Mariela, vuelvo por el saldo pendiente de " + moneyARS(78300) + ". Necesito que me confirmes fecha de pago para agendarlo." },
-            { who: "recv", text: "El viernes 9:30." },
-            { who: "sent", text: "Listo, agendado. Gracias." }
-          ]
-        }
-      },
-      {
-        id: "hermanos",
-        name: 'Cuadrilla "Los Hermanos"',
-        days: 46,
-        amount: 298000,
-        status: "Ignoró",
-        statusColor: "red",
-        defaultTone: "directo",
-        messages: {
-          amable: "Hola, ¿cómo andan? Les escribo por la cuenta del corralón: quedó pendiente " + moneyARS(298000) + " (46 días). ¿Me confirman si lo pueden regularizar hoy o qué fecha les queda cómoda?",
-          directo: "Hola, les escribo por la cuenta: quedó pendiente " + moneyARS(298000) + " (vencida hace 46 días). ¿Me confirman cuándo lo pueden regularizar?",
-          ultimo: "Hola, vuelvo por el saldo pendiente de " + moneyARS(298000) + " (46 días). Necesito fecha de pago hoy para dejarlo agendado, o comprobante si ya lo abonaron."
-        },
-        conversation: {
-          amable: [
-            { who: "sent", text: "Hola, ¿cómo andan? Les escribo por la cuenta del corralón: quedó pendiente " + moneyARS(298000) + " (46 días). ¿Me confirman qué fecha les queda cómoda para regularizar?" },
-            { who: "recv", text: "…" },
-            { who: "sent", text: "Con una fecha lo dejamos ordenado y listo." }
-          ],
-          directo: [
-            { who: "sent", text: "Hola, les escribo por la cuenta: quedó pendiente " + moneyARS(298000) + " (vencida hace 46 días). ¿Me confirman cuándo lo pueden regularizar?" },
-            { who: "recv", text: "…" },
-            { who: "sent", text: "Quedo atento. Si ya lo abonaron, me mandan comprobante cuando puedan." }
-          ],
-          ultimo: [
-            { who: "sent", text: "Hola, vuelvo por el saldo pendiente de " + moneyARS(298000) + " (46 días). Necesito fecha de pago hoy para dejarlo agendado, o comprobante si ya lo abonaron." },
-            { who: "recv", text: "…" },
-            { who: "sent", text: "Si hoy me confirman fecha, lo dejo agendado y listo." }
-          ]
-        }
-      }
+    const tlData = [
+      {name:"Nico",       steps:`enviado → respondió → <span class="ok">pagó ✓</span>`},
+      {name:"Mariela",    steps:`enviado → respondió → <span class="warn">prometió</span> (viernes 9:30)`},
+      {name:"Obras Rivas",steps:`enviado → <span class="dim">sin respuesta</span> → seguimiento programado`},
+      {name:"Cuadrilla",  steps:`enviado → <span class="dim">sin respuesta</span> → seguimiento programado`}
     ];
+    $("#timeline").innerHTML = tlData.map(t=>`
+      <div class="tl-item">
+        <div><div class="tl-name">${esc(t.name)}</div><div class="tl-steps">${t.steps}</div></div>
+        <div class="subtle" style="font-size:11px;">hoy</div>
+      </div>`).join("");
+  }
 
-    // Screen 3 hardcoded results/timeline (matches spec)
-    const dayResult = {
-      paid: { amount: 186900, who: "Nico Barrionuevo" },
-      promised: { amount: 78300, who: "Mariela Sosa", when: "viernes 9:30" },
-      noAnswer: { amount: 910400, who: "Obras Rivas + Cuadrilla Los Hermanos" },
-      scheduledFollowups: 2
-    };
+  /* ── State ── */
+  let selId = null, tone = "amable";
+  const sentMap = {};
 
-    // ---------- UI helpers ----------
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  function getD(id){ return debtors.find(d=>d.id===id); }
 
-    function showScreen(n){
-      $$(".screen").forEach(s => s.classList.remove("active"));
-      $("#screen" + n).classList.add("active");
-      // tiny UX improvement: scroll top on navigation
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function statusBadge(statusColor, text){
-      const cls = statusColor === "red" ? "status-red" : statusColor === "green" ? "status-green" : "status-yellow";
-      return `<span class="badge ${cls}"><span class="dot"></span>${text}</span>`;
-    }
-
-    function escapeHtml(str){
-      return str.replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
-    }
-
-    // ---------- Render Screen 1 bars ----------
-    function renderAgeBars(){
-      const max = Math.max(...ageBuckets.map(b => b.amount));
-      const container = $("#ageBars");
-      container.innerHTML = "";
-      ageBuckets.forEach((b, i) => {
-        const pct = Math.max(6, Math.round((b.amount / max) * 100));
-        const row = document.createElement("div");
-        row.className = "barRow" + (b.prio ? (i === 2 ? " prio2" : " prio") : "");
-        row.innerHTML = `
-          <div class="bucket">${b.key}</div>
-          <div class="bar" aria-hidden="true"><span style="width:${pct}%;"></span></div>
-          <div class="amt">${moneyARS(b.amount)}</div>
-        `;
-        container.appendChild(row);
-      });
-    }
-
-    // ---------- Render Screen 2 table ----------
-    function renderDebtorsTable(){
-      const tbody = $("#debtorsTbody");
-      tbody.innerHTML = "";
-      debtors.forEach(d => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = d.id;
-        tr.innerHTML = `
-          <td>${escapeHtml(d.name)}</td>
-          <td class="tdCenter">${d.days}</td>
-          <td class="tdRight">${moneyARS(d.amount)}</td>
-          <td class="tdCenter">${statusBadge(d.statusColor, d.status)}</td>
-        `;
-        tr.addEventListener("click", () => selectDebtor(d.id));
-        tbody.appendChild(tr);
-      });
-    }
-
-    // ---------- Panel state ----------
-    let selectedDebtorId = null;
-    let selectedTone = "amable";
-    let sentMap = {}; // id -> boolean (simulated)
-
-    function setTone(tone){
-      selectedTone = tone;
-      // Toggle active button
-      $("#toneAmable").classList.toggle("active", tone === "amable");
-      $("#toneDirecto").classList.toggle("active", tone === "directo");
-      $("#toneUltimo").classList.toggle("active", tone === "ultimo");
-
-      updatePanelMessage();
-    }
-
-    function getDebtorById(id){
-      return debtors.find(d => d.id === id);
-    }
-
-    function updatePanelMessage(){
-      const d = selectedDebtorId ? getDebtorById(selectedDebtorId) : null;
-      if(!d){
-        $("#msgBubble").textContent = "Elegí un deudor para ver el mensaje sugerido.";
-        $("#btnConversation").disabled = true;
-        $("#btnCopy").disabled = true;
-        $("#btnMarkSent").disabled = true;
-        return;
-      }
-      const text = d.messages[selectedTone] || "";
-      $("#msgBubble").textContent = text;
-    }
-
-    function selectDebtor(id){
-      selectedDebtorId = id;
-      const d = getDebtorById(id);
-
-      // highlight row
-      $$("#debtorsTbody tr").forEach(tr => tr.classList.toggle("selected", tr.dataset.id === id));
-
-      // Set default tone for this debtor on first selection
-      selectedTone = d.defaultTone;
-      setTone(selectedTone);
-
-      $("#panelName").textContent = d.name;
-      $("#panelMeta").textContent = `${d.days} días vencido · ${moneyARS(d.amount)} · Estado: ${d.status}`;
-      $("#btnConversation").disabled = false;
-      $("#btnCopy").disabled = false;
-      $("#btnMarkSent").disabled = false;
-
-      // Update mark sent label
-      $("#btnMarkSent").textContent = sentMap[id] ? "Marcado como “Enviado” ✓ (simulado)" : "Marcar como “Enviado” (simulado)";
-      $("#btnMarkSent").style.borderColor = sentMap[id] ? "rgba(0,200,122,0.35)" : "rgba(245,243,239,0.14)";
-      $("#btnMarkSent").style.background = sentMap[id] ? "rgba(0,200,122,0.10)" : "rgba(245,243,239,0.04)";
-    }
-
-    // ---------- WhatsApp modal ----------
-    function openConversation(){
-      const d = selectedDebtorId ? getDebtorById(selectedDebtorId) : null;
-      if(!d) return;
-
-      $("#chatName").textContent = d.name;
-      $("#chatMeta").textContent = "Simulación WhatsApp · Fondo verde oscuro · Burbuja blanca (enviado) / gris (recibido)";
-
-      const seq = d.conversation[selectedTone] || [];
-      const chatBody = $("#chatBody");
-      chatBody.innerHTML = "";
-
-      // Add a subtle "header" system message
-      const sys = document.createElement("div");
-      sys.className = "chatMeta";
-      sys.textContent = "Hoy · Mensajes simulados (no se envía nada)";
-      chatBody.appendChild(sys);
-
-      seq.forEach(m => {
-        const row = document.createElement("div");
-        row.className = "bubbleRow " + (m.who === "sent" ? "sent" : "recv");
-
-        const bubble = document.createElement("div");
-        bubble.className = "bubble " + (m.who === "sent" ? "sent" : "recv");
-        bubble.textContent = m.text;
-
-        row.appendChild(bubble);
-        chatBody.appendChild(row);
-      });
-
-      $("#modalBackdrop").classList.add("open");
-      // scroll bottom
-      setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 0);
-    }
-
-    function closeConversation(){
-      $("#modalBackdrop").classList.remove("open");
-    }
-
-    // ---------- Screen 3 rendering ----------
-    function renderScreen3(){
-      // ranking
-      const ranking = $("#ranking");
-      ranking.innerHTML = "";
-
-      const items = [
-        { name: "Nico Barrionuevo", right: statusBadge("green","Pagó"), desc: "Monto: " + moneyARS(186900) },
-        { name: "Mariela Sosa", right: statusBadge("yellow","Prometió"), desc: "Monto: " + moneyARS(78300) + " · " + dayResult.promised.when },
-        { name: "Obras Rivas", right: statusBadge("red","Sin respuesta"), desc: "Seguimiento programado" },
-        { name: 'Cuadrilla "Los Hermanos"', right: statusBadge("red","Sin respuesta"), desc: "Seguimiento programado" }
-      ];
-
-      items.forEach(it => {
-        const div = document.createElement("div");
-        div.className = "tlItem";
-        div.innerHTML = `
-          <div>
-            <div class="name">${escapeHtml(it.name)}</div>
-            <div class="steps">${escapeHtml(it.desc)}</div>
-          </div>
-          <div>${it.right}</div>
-        `;
-        ranking.appendChild(div);
-      });
-
-      // timeline
-      const timeline = $("#timeline");
-      timeline.innerHTML = "";
-
-      const tl = [
-        {
-          name: "Nico",
-          steps: `enviado → respondió → <span class="ok">pagó ✓</span>`
-        },
-        {
-          name: "Mariela",
-          steps: `enviado → respondió → <span class="warn">prometió</span> (viernes 9:30)`
-        },
-        {
-          name: "Obras Rivas",
-          steps: `enviado → <span class="muted">sin respuesta</span> → seguimiento programado`
-        },
-        {
-          name: "Cuadrilla",
-          steps: `enviado → <span class="muted">sin respuesta</span> → seguimiento programado`
-        }
-      ];
-
-      tl.forEach(t => {
-        const div = document.createElement("div");
-        div.className = "tlItem";
-        div.innerHTML = `
-          <div>
-            <div class="name">${escapeHtml(t.name)}</div>
-            <div class="steps">${t.steps}</div>
-          </div>
-          <div class="subtle">hoy</div>
-        `;
-        timeline.appendChild(div);
-      });
-    }
-
-    // ---------- Wiring ----------
-    renderAgeBars();
-    renderDebtorsTable();
-    renderScreen3();
-
-    // Default selection (nice for demos)
-    // Select a high-impact one first: Obras Rivas
-    setTimeout(() => selectDebtor("rivas"), 0);
-
-    // Navigation buttons
-    $("#btnStart").addEventListener("click", () => showScreen(2));
-    $("#btnJumpToResults").addEventListener("click", () => showScreen(3));
-
-    $("#btnBack1").addEventListener("click", () => showScreen(1));
-    $("#btnTo3").addEventListener("click", () => showScreen(3));
-    $("#btnBack2").addEventListener("click", () => showScreen(2));
-    $("#btnHome").addEventListener("click", () => showScreen(1));
-
-    // Tone selector
-    $("#toneAmable").addEventListener("click", () => setTone("amable"));
-    $("#toneDirecto").addEventListener("click", () => setTone("directo"));
-    $("#toneUltimo").addEventListener("click", () => setTone("ultimo"));
-
-    // Copy
-    $("#btnCopy").addEventListener("click", async () => {
-      const text = $("#msgBubble").textContent || "";
-      try{
-        await navigator.clipboard.writeText(text);
-        const b = $("#btnCopy");
-        const prev = b.textContent;
-        b.textContent = "Copiado ✓";
-        setTimeout(()=> b.textContent = prev, 1200);
-      }catch(e){
-        // Fallback: select text
-        alert("No pude acceder al portapapeles en este navegador. Copiá el texto manualmente.");
-      }
+  function setTone(t){
+    tone = t;
+    ["A","D","U"].forEach(k=>{
+      const map={A:"amable",D:"directo",U:"ultimo"};
+      $("#t"+k).classList.toggle("active", map[k]===t);
     });
+    updateMsg();
+  }
 
-    // Mark as sent (simulated)
-    $("#btnMarkSent").addEventListener("click", () => {
-      if(!selectedDebtorId) return;
-      sentMap[selectedDebtorId] = true;
-      $("#btnMarkSent").textContent = "Marcado como “Enviado” ✓ (simulado)";
-      $("#btnMarkSent").style.borderColor = "rgba(0,200,122,0.35)";
-      $("#btnMarkSent").style.background = "rgba(0,200,122,0.10)";
+  function updateMsg(){
+    const d = selId ? getD(selId) : null;
+    const el = $("#msgBubble");
+    if(!d){ el.textContent="Elegí un deudor para ver el mensaje."; el.classList.add("placeholder"); return; }
+    el.textContent = d.messages[tone]||"";
+    el.classList.remove("placeholder");
+  }
+
+  function selectDebtor(id){
+    selId = id;
+    const d = getD(id);
+    $$(" #debtorsTbody tr").forEach(tr=>tr.classList.toggle("selected", tr.dataset.id===id));
+    tone = d.defaultTone;
+    setTone(tone);
+    $("#panelName").textContent = d.name;
+    $("#panelMeta").textContent = `${d.days} días vencido · ${fmt(d.amount)} · ${d.status}`;
+    $("#btnConv").disabled = false;
+    $("#btnCopy").disabled = false;
+    $("#btnSent").disabled = false;
+    const sent = sentMap[id];
+    $("#btnSent").textContent = sent ? "Enviado ✓" : "Marcar enviado";
+    $("#btnSent").style.borderColor = sent ? "rgba(0,200,122,0.35)" : "";
+    // On mobile, scroll to message panel
+    if(window.innerWidth < 900){
+      setTimeout(()=>{ $("#s2 .msg-panel").scrollIntoView({behavior:"smooth", block:"start"}); }, 80);
+    }
+  }
+
+  /* ── Modal ── */
+  function openModal(){
+    const d = selId ? getD(selId) : null;
+    if(!d) return;
+    $("#chatName").textContent = d.name;
+    const body = $("#chatBody");
+    body.innerHTML = `<div class="chat-sys">Hoy · Mensajes simulados</div>`;
+    (d.conv[tone]||[]).forEach(m=>{
+      const row = document.createElement("div");
+      row.className = "bubble-row " + (m.who==="sent"?"sent":"recv");
+      const bub = document.createElement("div");
+      bub.className = "chat-bubble " + (m.who==="sent"?"sent":"recv");
+      bub.textContent = m.text;
+      row.appendChild(bub);
+      body.appendChild(row);
     });
+    $("#modalBg").classList.add("open");
+    setTimeout(()=>{ body.scrollTop = body.scrollHeight; }, 0);
+  }
+  function closeModal(){ $("#modalBg").classList.remove("open"); }
 
-    // Conversation modal
-    $("#btnConversation").addEventListener("click", openConversation);
-    $("#btnCloseModal").addEventListener("click", closeConversation);
-    $("#modalBackdrop").addEventListener("click", (e) => {
-      if(e.target === $("#modalBackdrop")) closeConversation();
-    });
-    document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeConversation();
-    });
+  /* ── Init ── */
+  renderBars();
+  renderTable();
+  renderS3();
+  setTimeout(()=>selectDebtor("rivas"), 0);
 
-    // Improve: if debtor changes, keep default tone unless user changed manually.
-    // (We already reset to debtor default on select. That's fine for demo.)
+  /* ── Events ── */
+  $("#btnStart").onclick  = ()=>showScreen(2);
+  $("#btnJump").onclick   = ()=>showScreen(3);
+  $("#btnBack1").onclick  = ()=>showScreen(1);
+  $("#btnTo3").onclick    = ()=>showScreen(3);
+  $("#btnBack2").onclick  = ()=>showScreen(2);
+  $("#btnHome").onclick   = ()=>showScreen(1);
 
-  </script>
+  $("#tA").onclick = ()=>setTone("amable");
+  $("#tD").onclick = ()=>setTone("directo");
+  $("#tU").onclick = ()=>setTone("ultimo");
+
+  $("#btnConv").onclick = openModal;
+  $("#btnClose").onclick = closeModal;
+  $("#modalBg").onclick = e=>{ if(e.target===$("#modalBg")) closeModal(); };
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+  $("#btnCopy").onclick = async()=>{
+    const txt = $("#msgBubble").textContent||"";
+    try{
+      await navigator.clipboard.writeText(txt);
+      const b=$("#btnCopy"), prev=b.textContent;
+      b.textContent="Copiado ✓"; setTimeout(()=>b.textContent=prev,1200);
+    }catch(e){ alert("Copiá el texto manualmente."); }
+  };
+
+  $("#btnSent").onclick = ()=>{
+    if(!selId) return;
+    sentMap[selId] = true;
+    $("#btnSent").textContent = "Enviado ✓";
+    $("#btnSent").style.borderColor = "rgba(0,200,122,0.35)";
+    $("#btnSent").style.background = "rgba(0,200,122,0.08)";
+  };
+</script>
 </body>
 </html>
