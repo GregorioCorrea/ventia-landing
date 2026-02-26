@@ -48,12 +48,6 @@
     text-decoration: none;
   }
 
-  .logo-mark {
-    width: 36px;
-    height: 36px;
-    position: relative;
-  }
-
   .logo-text {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
@@ -62,9 +56,7 @@
     letter-spacing: -0.5px;
   }
 
-  .logo-text span {
-    color: var(--verde);
-  }
+  .logo-text span { color: var(--verde); }
 
   .nav-cta {
     background: var(--negro);
@@ -79,10 +71,7 @@
     letter-spacing: 0.01em;
   }
 
-  .nav-cta:hover {
-    background: var(--verde);
-    transform: translateY(-1px);
-  }
+  .nav-cta:hover { background: var(--verde); transform: translateY(-1px); }
 
   /* HERO */
   .hero {
@@ -147,25 +136,7 @@
     opacity: 0;
   }
 
-  .hero h1 em {
-    font-style: normal;
-    color: var(--verde);
-  }
-
-  .hero h1 .tachado {
-    position: relative;
-    color: var(--gris);
-  }
-
-  .hero h1 .tachado::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0;
-    top: 50%;
-    height: 3px;
-    background: var(--acento);
-    transform: rotate(-2deg);
-  }
+  .hero h1 em { font-style: normal; color: var(--verde); }
 
   .hero-sub {
     font-size: 18px;
@@ -178,10 +149,7 @@
     opacity: 0;
   }
 
-  .hero-sub strong {
-    color: var(--negro);
-    font-weight: 500;
-  }
+  .hero-sub strong { color: var(--negro); font-weight: 500; }
 
   .hero-actions {
     display: flex;
@@ -210,23 +178,15 @@
     box-shadow: 0 8px 32px rgba(0,200,122,0.4);
   }
 
-  .hero-nota {
-    font-size: 13px;
-    color: var(--gris);
-    font-weight: 300;
-  }
-
-  .hero-nota strong {
-    color: var(--negro);
-    font-weight: 500;
-  }
+  .hero-nota { font-size: 13px; color: var(--gris); font-weight: 300; }
+  .hero-nota strong { color: var(--negro); font-weight: 500; }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(24px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* DOLOR STATEMENT */
+  /* DOLOR */
   .dolor {
     background: var(--negro);
     color: var(--blanco);
@@ -244,15 +204,10 @@
     letter-spacing: -0.02em;
   }
 
-  .dolor p em {
-    font-style: normal;
-    color: var(--verde);
-  }
+  .dolor p em { font-style: normal; color: var(--verde); }
 
   /* MÓDULOS */
-  .modulos {
-    padding: 100px 48px;
-  }
+  .modulos { padding: 100px 48px; }
 
   .section-label {
     font-size: 11px;
@@ -289,21 +244,31 @@
     transition: background 0.2s;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
-  .modulo-card:hover {
-    background: var(--negro);
-  }
+  .modulo-card:hover { background: var(--negro); }
 
   .modulo-card:hover .modulo-nombre,
   .modulo-card:hover .modulo-desc,
-  .modulo-card:hover .modulo-roi {
-    color: var(--blanco);
-  }
+  .modulo-card:hover .modulo-roi { color: var(--blanco); }
 
   .modulo-card:hover .modulo-icono {
     background: var(--verde);
     color: var(--negro);
+  }
+
+  .modulo-card:hover .btn-demo {
+    background: var(--verde);
+    color: var(--negro);
+    border-color: var(--verde);
+  }
+
+  .modulo-card:hover .btn-demo-disabled {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    border-color: rgba(255,255,255,0.15);
   }
 
   .modulo-icono {
@@ -344,6 +309,7 @@
     margin-bottom: 24px;
     font-weight: 300;
     transition: color 0.2s;
+    flex: 1;
   }
 
   .modulo-roi {
@@ -353,6 +319,49 @@
     transition: color 0.2s;
     border-top: 1px solid var(--gris-claro);
     padding-top: 20px;
+    margin-bottom: 16px;
+  }
+
+  .modulo-card:hover .modulo-roi {
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  /* Demo buttons */
+  .btn-demo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid var(--negro);
+    color: var(--negro);
+    transition: all 0.2s;
+    width: fit-content;
+  }
+
+  .btn-demo:hover {
+    background: var(--negro);
+    color: var(--blanco);
+  }
+
+  .btn-demo-disabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    border: 2px solid var(--gris-claro);
+    color: var(--gris);
+    width: fit-content;
+    cursor: default;
+    transition: all 0.2s;
   }
 
   /* PROPUESTA */
@@ -375,10 +384,7 @@
     margin-bottom: 24px;
   }
 
-  .propuesta-texto h2 em {
-    font-style: normal;
-    color: var(--verde);
-  }
+  .propuesta-texto h2 em { font-style: normal; color: var(--verde); }
 
   .propuesta-texto p {
     font-size: 17px;
@@ -387,17 +393,9 @@
     line-height: 1.7;
   }
 
-  .propuesta-items {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
+  .propuesta-items { display: flex; flex-direction: column; gap: 24px; }
 
-  .propuesta-item {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-  }
+  .propuesta-item { display: flex; gap: 20px; align-items: flex-start; }
 
   .propuesta-num {
     font-family: 'Syne', sans-serif;
@@ -423,14 +421,9 @@
   }
 
   /* PRECIOS */
-  .precios {
-    padding: 100px 48px;
-  }
+  .precios { padding: 100px 48px; }
 
-  .precios-header {
-    text-align: center;
-    margin-bottom: 64px;
-  }
+  .precios-header { text-align: center; margin-bottom: 64px; }
 
   .precios-header h2 {
     font-family: 'Syne', sans-serif;
@@ -440,11 +433,7 @@
     margin-bottom: 16px;
   }
 
-  .precios-header p {
-    font-size: 17px;
-    color: var(--gris);
-    font-weight: 300;
-  }
+  .precios-header p { font-size: 17px; color: var(--gris); font-weight: 300; }
 
   .precios-grid {
     display: grid;
@@ -462,10 +451,7 @@
     transition: border-color 0.2s, transform 0.2s;
   }
 
-  .precio-card:hover {
-    border-color: var(--verde);
-    transform: translateY(-4px);
-  }
+  .precio-card:hover { border-color: var(--verde); transform: translateY(-4px); }
 
   .precio-card.destacado {
     border-color: var(--negro);
@@ -473,9 +459,7 @@
     color: var(--blanco);
   }
 
-  .precio-card.destacado:hover {
-    border-color: var(--verde);
-  }
+  .precio-card.destacado:hover { border-color: var(--verde); }
 
   .precio-badge {
     position: absolute;
@@ -502,9 +486,7 @@
     margin-bottom: 16px;
   }
 
-  .precio-card.destacado .precio-plan {
-    color: rgba(245,243,239,0.5);
-  }
+  .precio-card.destacado .precio-plan { color: rgba(245,243,239,0.5); }
 
   .precio-monto {
     font-family: 'Syne', sans-serif;
@@ -522,9 +504,7 @@
     margin-bottom: 32px;
   }
 
-  .precio-card.destacado .precio-periodo {
-    color: rgba(245,243,239,0.5);
-  }
+  .precio-card.destacado .precio-periodo { color: rgba(245,243,239,0.5); }
 
   .precio-features {
     list-style: none;
@@ -548,12 +528,9 @@
     color: var(--verde);
     font-weight: 700;
     flex-shrink: 0;
-    margin-top: 0px;
   }
 
-  .precio-card.destacado .precio-features li {
-    color: rgba(245,243,239,0.8);
-  }
+  .precio-card.destacado .precio-features li { color: rgba(245,243,239,0.8); }
 
   .btn-precio {
     display: block;
@@ -568,10 +545,7 @@
     color: var(--negro);
   }
 
-  .btn-precio:hover {
-    background: var(--negro);
-    color: var(--blanco);
-  }
+  .btn-precio:hover { background: var(--negro); color: var(--blanco); }
 
   .precio-card.destacado .btn-precio {
     background: var(--verde);
@@ -614,10 +588,7 @@
     margin: 0 auto 24px;
   }
 
-  .cta-final h2 em {
-    font-style: normal;
-    color: var(--verde);
-  }
+  .cta-final h2 em { font-style: normal; color: var(--verde); }
 
   .cta-final p {
     font-size: 17px;
@@ -626,10 +597,7 @@
     margin-bottom: 48px;
   }
 
-  .cta-final .btn-primary {
-    font-size: 18px;
-    padding: 20px 48px;
-  }
+  .cta-final .btn-primary { font-size: 18px; padding: 20px 48px; }
 
   /* FOOTER */
   footer {
@@ -640,11 +608,7 @@
     justify-content: space-between;
   }
 
-  footer p {
-    font-size: 13px;
-    color: var(--gris);
-    font-weight: 300;
-  }
+  footer p { font-size: 13px; color: var(--gris); font-weight: 300; }
 
   /* RESPONSIVE */
   @media (max-width: 768px) {
@@ -652,11 +616,7 @@
     .hero { padding: 100px 24px 60px; }
     .dolor { padding: 60px 24px; }
     .modulos { padding: 60px 24px; }
-    .propuesta {
-      padding: 60px 24px;
-      grid-template-columns: 1fr;
-      gap: 48px;
-    }
+    .propuesta { padding: 60px 24px; grid-template-columns: 1fr; gap: 48px; }
     .precios { padding: 60px 24px; }
     .precios-grid { grid-template-columns: 1fr; }
     .cta-final { padding: 80px 24px; }
@@ -666,15 +626,11 @@
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <a href="#" class="logo">
-    <svg class="logo-mark" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- V shape como flecha ascendente — ventas en movimiento -->
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
       <rect width="36" height="36" rx="9" fill="#0a0a0a"/>
-      <!-- Flecha que sube: representa tendencia al alza + la V de Ventia -->
       <path d="M8 24 L14 14 L18 20 L22 10 L28 10" stroke="#00c87a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <!-- Punto final: el resultado -->
       <circle cx="28" cy="10" r="2.5" fill="#00c87a"/>
     </svg>
     <span class="logo-text">vent<span>ia</span></span>
@@ -711,34 +667,71 @@
   <h2 class="section-title">Cuatro módulos.<br>Cuatro dolores resueltos.</h2>
 
   <div class="modulos-grid">
+
+    <!-- COBROSMART -->
     <div class="modulo-card">
       <div class="modulo-icono">💬</div>
       <div class="modulo-nombre">COBROSMART</div>
       <span class="modulo-tag">Cobranzas</span>
       <p class="modulo-desc">Le cobra a tus deudores por WhatsApp sin que vos pases el mal momento. Tono humano, escalada automática.</p>
       <p class="modulo-roi">→ "Recuperé $180.000 este mes sin hacer una sola llamada incómoda."</p>
+      <a href="/staticdemo/" class="btn-demo">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M5.5 4.5 L9.5 7 L5.5 9.5 Z" fill="currentColor"/>
+        </svg>
+        Ver demo
+      </a>
     </div>
+
+    <!-- STOCKSENSE -->
     <div class="modulo-card">
       <div class="modulo-icono">📦</div>
       <div class="modulo-nombre">STOCKSENSE</div>
       <span class="modulo-tag">Inventario</span>
       <p class="modulo-desc">Te avisa qué comprar antes de que se agote. Detecta stock parado que te tiene la plata inmovilizada.</p>
       <p class="modulo-roi">→ "Nunca más perdí una venta por falta de stock."</p>
+      <span class="btn-demo-disabled">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M5.5 4.5 L9.5 7 L5.5 9.5 Z" fill="currentColor"/>
+        </svg>
+        Demo próximamente
+      </span>
     </div>
+
+    <!-- VOLVÉ -->
     <div class="modulo-card">
       <div class="modulo-icono">🔄</div>
       <div class="modulo-nombre">VOLVÉ</div>
       <span class="modulo-tag">Retención</span>
       <p class="modulo-desc">Detecta clientes que dejaron de venir antes de que sea tarde. Los reactiva con mensajes personalizados.</p>
       <p class="modulo-roi">→ "Me avisó que 12 clientes no venían hace 45 días. Recuperé 8."</p>
+      <span class="btn-demo-disabled">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M5.5 4.5 L9.5 7 L5.5 9.5 Z" fill="currentColor"/>
+        </svg>
+        Demo próximamente
+      </span>
     </div>
+
+    <!-- AGENDA360 -->
     <div class="modulo-card">
       <div class="modulo-icono">📅</div>
       <div class="modulo-nombre">AGENDA360</div>
       <span class="modulo-tag">Turnos</span>
       <p class="modulo-desc">Confirma turnos automáticamente, rellena los huecos cuando cancelan y te dice cuándo perdés más plata.</p>
       <p class="modulo-roi">→ "Bajé el ausentismo de 30% a 8% en el primer mes."</p>
+      <span class="btn-demo-disabled">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M5.5 4.5 L9.5 7 L5.5 9.5 Z" fill="currentColor"/>
+        </svg>
+        Demo próximamente
+      </span>
     </div>
+
   </div>
 </section>
 
@@ -837,7 +830,7 @@
 <section class="cta-final">
   <h2>Tu negocio genera datos.<br><em>Hora de usarlos.</em></h2>
   <p>Probalo 30 días sin costo. Si no se paga solo, lo cancelás y listo.</p>
-  <a href="#" class="btn-primary">Empezar ahora — es gratis</a>
+  <a href="#trial" class="btn-primary">Empezar ahora — es gratis</a>
 </section>
 
 <!-- FOOTER -->
