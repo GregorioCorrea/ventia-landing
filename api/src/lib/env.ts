@@ -5,6 +5,7 @@ export type AppEnv = {
   AZURE_OPENAI_API_KEY: string;
   AZURE_OPENAI_DEPLOYMENT_NAME: string;
   AZURE_OPENAI_API_VERSION: string;
+  COBROSMART_BUSINESS_ID?: string;
 };
 
 const DEFAULT_AZURE_OPENAI_API_VERSION = "2024-10-21";
@@ -52,6 +53,7 @@ export function getEnv(): AppEnv {
 
   result.AZURE_OPENAI_API_VERSION =
     process.env.AZURE_OPENAI_API_VERSION?.trim() || DEFAULT_AZURE_OPENAI_API_VERSION;
+  result.COBROSMART_BUSINESS_ID = process.env.COBROSMART_BUSINESS_ID?.trim() || undefined;
 
   cachedEnv = result;
   return result;

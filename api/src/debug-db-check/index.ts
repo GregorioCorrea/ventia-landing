@@ -1,5 +1,6 @@
-import { handleHttpError, jsonResponse } from "../lib/errors";
+import { HttpError, handleHttpError, jsonResponse } from "../lib/errors";
 import { logInfo } from "../lib/logger";
+import { getSupabaseClient } from "../lib/supabase";
 import type { SimpleContext, SimpleHttpRequest } from "../lib/types";
 
 export async function run(context: SimpleContext, req: SimpleHttpRequest): Promise<void> {
@@ -13,8 +14,15 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       return;
     }
 
-    logInfo(context, "Health endpoint called");
-    context.res = jsonResponse(200, { ok: true, service: "cobrosmart-api" });
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from("business").select("id").limit(1);
+
+    if (error) {
+      throw new HttpError(500, "Supabase connectivity check failed.", "db_check_failed");
+    }
+
+    logInfo(context, "Supabase connectivity check passed");
+    context.res = jsonResponse(200, { ok: true });
   } catch (error) {
     context.res = handleHttpError(context, error);
   }

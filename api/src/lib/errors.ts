@@ -14,7 +14,7 @@ export class HttpError extends Error {
   }
 }
 
-function json(status: number, payload: Record<string, unknown>): SimpleHttpResponse {
+export function jsonResponse(status: number, payload: Record<string, unknown>): SimpleHttpResponse {
   return {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -25,12 +25,12 @@ function json(status: number, payload: Record<string, unknown>): SimpleHttpRespo
 export function handleHttpError(context: SimpleContext, error: unknown): SimpleHttpResponse {
   if (error instanceof HttpError) {
     logError(context, `HTTP ${error.status} - ${error.code}: ${error.message}`);
-    return json(error.status, { ok: false, error: error.code, message: error.message });
+    return jsonResponse(error.status, { ok: false, error: error.code, message: error.message });
   }
 
   if (error instanceof EnvValidationError) {
     logError(context, "Environment validation error", { missing: error.missing });
-    return json(500, {
+    return jsonResponse(500, {
       ok: false,
       error: "misconfigured_environment",
       message: "Server environment is not configured correctly."
@@ -38,7 +38,7 @@ export function handleHttpError(context: SimpleContext, error: unknown): SimpleH
   }
 
   logError(context, "Unexpected error", error);
-  return json(500, {
+  return jsonResponse(500, {
     ok: false,
     error: "internal_server_error",
     message: "An unexpected error occurred."
