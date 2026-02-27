@@ -443,7 +443,17 @@
   <section id="s1" class="screen active">
     <div class="card">
       <h2>Resumen de deuda y foco</h2>
-      <div class="subtle">Vista rápida para decidir dónde cobrar primero — datos ficticios.</div>
+      <div class="subtle">Vista rápida para decidir dónde cobrar primero — datos importados.</div>
+      <div class="card" style="margin-top:12px; background:rgba(255,255,255,0.02); box-shadow:none; border-color:rgba(255,255,255,0.07);">
+        <div class="subtle" style="margin-bottom:8px;">
+          Exportá tu Excel a CSV. Columnas: cliente_nombre, telefono, monto, dias_vencido (o fecha_vencimiento), obra (opcional).
+        </div>
+        <div class="btn-row">
+          <input id="csvFileInput" type="file" accept=".csv" style="max-width:260px;" />
+          <button class="btn btn-ghost btn-sm" id="btnImportCsv" type="button">Importar CSV</button>
+        </div>
+        <div class="subtle" id="csvImportResult" style="margin-top:8px;"></div>
+      </div>
 
       <div class="metrics">
         <div class="metric">
@@ -643,149 +653,119 @@
 </div>
 
 <script>
-  /* ── Data ── */
-  const fmt = n => "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
-
-  const buckets = [
-    { key:"0–15d",  amount:1620000, cls:"" },
-    { key:"16–30d", amount:2050000, cls:"" },
-    { key:"31–60d", amount:1880000, cls:"prio2" },
-    { key:"61+d",   amount:2430000, cls:"prio" }
-  ];
-
-  const debtors = [
-    {
-      id:"rivas", name:"Obras Rivas", days:74, amount:612400,
-      status:"Ignoró", sc:"red", defaultTone:"ultimo",
-      messages:{
-        amable:`Buenas, ¿cómo va? Les escribo por la cuenta del corralón: quedó pendiente ${fmt(612400)} (vencida hace 74 días). ¿Me confirman cuándo lo pueden regularizar así lo dejamos ordenado?`,
-        directo:`Buenas, por la cuenta: quedó pendiente ${fmt(612400)} (74 días). Necesito una fecha concreta para dejarlo agendado. ¿Qué día lo pueden saldar?`,
-        ultimo:`Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y me mandan comprobante cuando puedan.`
-      },
-      conv:{
-        amable:[
-          {who:"sent", text:`Hola, ¿cómo va? Les escribo por la cuenta del corralón. Quedó pendiente ${fmt(612400)} (74 días). ¿Me confirman cuándo lo pueden regularizar?`},
-          {who:"recv", text:"Dale, lo veo y te aviso."},
-          {who:"sent", text:"Perfecto. Con una fecha lo dejamos agendado y listo."},
-          {who:"recv", text:"…"}
-        ],
-        directo:[
-          {who:"sent", text:`Buenas, por la cuenta: quedó pendiente ${fmt(612400)} (74 días). Necesito fecha concreta de pago. ¿Qué día lo pueden saldar?`},
-          {who:"recv", text:"Lo reviso."},
-          {who:"sent", text:"Gracias. Me sirve una fecha para cerrar la cuenta."}
-        ],
-        ultimo:[
-          {who:"sent", text:`Buenas, vuelvo con esto así lo ordenamos: si hoy me pasan fecha de pago, lo dejamos agendado y listo.\nSi ya lo pagaron, ignoren este mensaje y mándenme comprobante cuando puedan.`},
-          {who:"recv", text:"…"},
-          {who:"sent", text:"Te leo cuando me confirmes una fecha."}
-        ]
-      }
-    },
-    {
-      id:"nico", name:"Nico Barrionuevo (Albañil)", days:19, amount:186900,
-      status:"Prometió", sc:"green", defaultTone:"amable",
-      messages:{
-        amable:`Hola Nico, ¿cómo va? Te escribo por la cuenta del corralón: quedó pendiente ${fmt(186900)} de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy así te lo dejo al día?`,
-        directo:`Hola Nico, quedó pendiente ${fmt(186900)} (19 días). ¿Lo podés regularizar hoy? Así lo dejo cerrado.`,
-        ultimo:`Hola Nico, vuelvo por la cuenta pendiente de ${fmt(186900)}. Necesito confirmación de pago hoy o una fecha concreta.`
-      },
-      conv:{
-        amable:[
-          {who:"sent", text:`Hola Nico, ¿cómo va? Quedó pendiente ${fmt(186900)} de los materiales de la semana pasada. ¿Te queda cómodo saldarlo hoy?`},
-          {who:"recv", text:"Sí, hoy a la tarde lo paso por transferencia."},
-          {who:"sent", text:"Genial, cuando tengas el comprobante me lo mandás y lo cierro."},
-          {who:"recv", text:"Listo, ahí va. ✅"}
-        ],
-        directo:[
-          {who:"sent", text:`Hola Nico, quedó pendiente ${fmt(186900)} (19 días). ¿Lo podés regularizar hoy?`},
-          {who:"recv", text:"Sí, lo hago ahora."},
-          {who:"sent", text:"Perfecto, pasame comprobante y queda cerrado."}
-        ],
-        ultimo:[
-          {who:"sent", text:`Hola Nico, vuelvo por la cuenta pendiente de ${fmt(186900)}. Necesito confirmación hoy o fecha concreta.`},
-          {who:"recv", text:"Hoy lo pago, tranqui."}
-        ]
-      }
-    },
-    {
-      id:"mariela", name:"Mariela Sosa", days:11, amount:78300,
-      status:"Sin contacto", sc:"yellow", defaultTone:"amable",
-      messages:{
-        amable:`Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente ${fmt(78300)}. ¿Lo podés resolver hoy o preferís que lo dejemos para mañana?`,
-        directo:`Hola Mariela, quedó pendiente ${fmt(78300)} (11 días). ¿Me confirmás si lo podés abonar hoy o mañana?`,
-        ultimo:`Hola Mariela, vuelvo por el saldo pendiente de ${fmt(78300)}. Necesito que me confirmes fecha de pago.`
-      },
-      conv:{
-        amable:[
-          {who:"sent", text:`Hola Mariela, ¿todo bien? Te aviso para que no se te pase: quedó pendiente ${fmt(78300)}. ¿Lo podés resolver hoy o preferís mañana?`},
-          {who:"recv", text:"Gracias, me re colgué. ¿Puede ser el viernes a las 9:30?"},
-          {who:"sent", text:"Sí, perfecto. Lo agendo para viernes 9:30. 🙌"}
-        ],
-        directo:[
-          {who:"sent", text:`Hola Mariela, quedó pendiente ${fmt(78300)} (11 días). ¿Lo podés abonar hoy o mañana?`},
-          {who:"recv", text:"El viernes a la mañana."},
-          {who:"sent", text:"Dale, ¿te va 9:30 así lo dejo agendado?"},
-          {who:"recv", text:"Sí, 9:30."}
-        ],
-        ultimo:[
-          {who:"sent", text:`Hola Mariela, vuelvo por el saldo de ${fmt(78300)}. Dame fecha de pago para agendarlo.`},
-          {who:"recv", text:"El viernes 9:30."},
-          {who:"sent", text:"Listo, agendado. Gracias."}
-        ]
-      }
-    },
-    {
-      id:"hermanos", name:'Cuadrilla "Los Hermanos"', days:46, amount:298000,
-      status:"Ignoró", sc:"red", defaultTone:"directo",
-      messages:{
-        amable:`Hola, ¿cómo andan? Les escribo por la cuenta del corralón: quedó pendiente ${fmt(298000)} (46 días). ¿Me confirman qué fecha les queda cómoda para regularizar?`,
-        directo:`Hola, les escribo por la cuenta: quedó pendiente ${fmt(298000)} (vencida hace 46 días). ¿Me confirman cuándo lo pueden regularizar?`,
-        ultimo:`Hola, vuelvo por el saldo de ${fmt(298000)} (46 días). Necesito fecha de pago hoy para agendarlo, o comprobante si ya lo abonaron.`
-      },
-      conv:{
-        amable:[
-          {who:"sent", text:`Hola, ¿cómo andan? Quedó pendiente ${fmt(298000)} (46 días). ¿Me confirman qué fecha les queda cómoda?`},
-          {who:"recv", text:"…"},
-          {who:"sent", text:"Con una fecha lo dejamos ordenado y listo."}
-        ],
-        directo:[
-          {who:"sent", text:`Hola, quedó pendiente ${fmt(298000)} (46 días). ¿Cuándo lo pueden regularizar?`},
-          {who:"recv", text:"…"},
-          {who:"sent", text:"Si ya lo abonaron, me mandan comprobante cuando puedan."}
-        ],
-        ultimo:[
-          {who:"sent", text:`Hola, vuelvo por el saldo de ${fmt(298000)} (46 días). Necesito fecha hoy para agendarlo, o comprobante si ya lo pagaron.`},
-          {who:"recv", text:"…"},
-          {who:"sent", text:"Si hoy me confirman fecha, lo dejo agendado y listo."}
-        ]
-      }
-    }
-  ];
-
-  /* ── Helpers ── */
-  const $  = s => document.querySelector(s);
+  const fmt = n => "$" + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
-  const esc = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const esc = s => String(s || "").replace(/[&<>"']/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#039;" }[m]));
+
+  let debtors = [];
+  let selId = null;
+  let tone = "amable";
+  const sentMap = {};
 
   function showScreen(n){
-    $$(".screen").forEach(s=>s.classList.remove("active"));
-    $("#s"+n).classList.add("active");
-    window.scrollTo({top:0, behavior:"smooth"});
+    $$(".screen").forEach(s => s.classList.remove("active"));
+    $("#s" + n).classList.add("active");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function badge(sc, text){
-    const cls = sc==="red"?"s-red": sc==="green"?"s-green":"s-yellow";
+    const cls = sc === "red" ? "s-red" : sc === "green" ? "s-green" : "s-yellow";
     return `<span class="badge ${cls}"><span class="dot"></span>${esc(text)}</span>`;
   }
 
-  /* ── Render bars ── */
+  function statusLabel(lastStatus){
+    if (lastStatus === "ignored") return "Ignoro";
+    if (lastStatus === "promised") return "Prometio";
+    if (lastStatus === "paid") return "Pago";
+    if (lastStatus === "contacted") return "Contactado";
+    return "Nuevo";
+  }
+
+  function scoreColor(priorityScore, days){
+    if ((priorityScore || 0) >= 180 || days >= 45) return "red";
+    if ((priorityScore || 0) >= 90 || days >= 20) return "yellow";
+    return "green";
+  }
+
+  function defaultToneByScore(sc){
+    if (sc === "red") return "ultimo";
+    if (sc === "yellow") return "directo";
+    return "amable";
+  }
+
+  function buildMessages(d){
+    return {
+      amable: `Hola ${d.name}, te escribo por la cuenta pendiente del corralon: ${fmt(d.amount)} (${d.days} dias). Si queres lo dejamos ordenado hoy.`,
+      directo: `Hola ${d.name}, quedo pendiente ${fmt(d.amount)} (${d.days} dias vencidos). Confirmame por favor una fecha concreta de pago.`,
+      ultimo: `Hola ${d.name}, ultimo aviso por saldo pendiente ${fmt(d.amount)} (${d.days} dias). Necesito confirmacion hoy o comprobante si ya fue abonado.`
+    };
+  }
+
+  function buildConversation(d){
+    return {
+      amable: [
+        { who: "sent", text: d.messages.amable },
+        { who: "recv", text: "Recibido, hoy lo reviso." }
+      ],
+      directo: [
+        { who: "sent", text: d.messages.directo },
+        { who: "recv", text: "Te confirmo en un rato." }
+      ],
+      ultimo: [
+        { who: "sent", text: d.messages.ultimo },
+        { who: "recv", text: "Entendido, te paso fecha hoy." }
+      ]
+    };
+  }
+
+  function normalizeDebtor(raw){
+    const id = raw.id || `${raw.phone || "d"}-${Math.random().toString(36).slice(2, 8)}`;
+    const days = Number(raw.days_overdue || 0);
+    const amount = Number(raw.amount_ars || 0);
+    const sc = scoreColor(raw.priority_score, days);
+    const debtor = {
+      id,
+      name: raw.name || "Sin nombre",
+      phone: raw.phone || "",
+      days,
+      amount,
+      status: statusLabel(raw.last_status),
+      sc,
+      priorityReason: raw.priority_reason || "",
+      defaultTone: defaultToneByScore(sc),
+      messages: null,
+      conv: null
+    };
+    debtor.messages = buildMessages(debtor);
+    debtor.conv = buildConversation(debtor);
+    return debtor;
+  }
+
+  function computeBuckets(items){
+    const sums = { b1:0, b2:0, b3:0, b4:0 };
+    items.forEach(d => {
+      if (d.days <= 15) sums.b1 += d.amount;
+      else if (d.days <= 30) sums.b2 += d.amount;
+      else if (d.days <= 60) sums.b3 += d.amount;
+      else sums.b4 += d.amount;
+    });
+    return [
+      { key: "0–15d", amount: sums.b1, cls: "" },
+      { key: "16–30d", amount: sums.b2, cls: "" },
+      { key: "31–60d", amount: sums.b3, cls: "prio2" },
+      { key: "61+d", amount: sums.b4, cls: "prio" }
+    ];
+  }
+
   function renderBars(){
-    const max = Math.max(...buckets.map(b=>b.amount));
+    const buckets = computeBuckets(debtors);
+    const max = Math.max(1, ...buckets.map(b => b.amount));
     const el = $("#ageBars");
     el.innerHTML = "";
-    buckets.forEach(b=>{
-      const pct = Math.max(6, Math.round(b.amount/max*100));
-      el.insertAdjacentHTML("beforeend",`
+    buckets.forEach(b => {
+      const pct = Math.max(6, Math.round((b.amount / max) * 100));
+      el.insertAdjacentHTML("beforeend", `
         <div class="bar-row ${b.cls}">
           <div class="b-label">${b.key}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
@@ -794,11 +774,10 @@
     });
   }
 
-  /* ── Render table ── */
   function renderTable(){
     const tbody = $("#debtorsTbody");
     tbody.innerHTML = "";
-    debtors.forEach(d=>{
+    debtors.forEach(d => {
       const tr = document.createElement("tr");
       tr.dataset.id = d.id;
       tr.innerHTML = `
@@ -806,49 +785,35 @@
         <td class="tc">${d.days}</td>
         <td class="tr">${fmt(d.amount)}</td>
         <td class="tc">${badge(d.sc, d.status)}</td>`;
-      tr.addEventListener("click",()=>selectDebtor(d.id));
+      tr.addEventListener("click", () => selectDebtor(d.id));
       tbody.appendChild(tr);
     });
   }
 
-  /* ── Render screen 3 ── */
   function renderS3(){
-    const rankData = [
-      {name:"Nico Barrionuevo", badge:badge("green","Pagó"),          desc:fmt(186900)},
-      {name:"Mariela Sosa",     badge:badge("yellow","Prometió"),      desc:fmt(78300)+" · viernes 9:30"},
-      {name:"Obras Rivas",      badge:badge("red","Sin respuesta"),    desc:"Seguimiento programado"},
-      {name:'Cuadrilla "Los Hermanos"', badge:badge("red","Sin respuesta"), desc:"Seguimiento programado"}
-    ];
-    $("#ranking").innerHTML = rankData.map(r=>`
+    const rankItems = [...debtors].slice(0, 4);
+    $("#ranking").innerHTML = rankItems.map(d => `
       <div class="tl-item">
-        <div><div class="tl-name">${esc(r.name)}</div><div class="tl-desc">${esc(r.desc)}</div></div>
-        <div>${r.badge}</div>
+        <div><div class="tl-name">${esc(d.name)}</div><div class="tl-desc">${esc(d.priorityReason || "Sin motivo de prioridad")}</div></div>
+        <div>${badge(d.sc, d.status)}</div>
       </div>`).join("");
 
-    const tlData = [
-      {name:"Nico",       steps:`enviado → respondió → <span class="ok">pagó ✓</span>`},
-      {name:"Mariela",    steps:`enviado → respondió → <span class="warn">prometió</span> (viernes 9:30)`},
-      {name:"Obras Rivas",steps:`enviado → <span class="dim">sin respuesta</span> → seguimiento programado`},
-      {name:"Cuadrilla",  steps:`enviado → <span class="dim">sin respuesta</span> → seguimiento programado`}
-    ];
-    $("#timeline").innerHTML = tlData.map(t=>`
+    $("#timeline").innerHTML = rankItems.map(d => `
       <div class="tl-item">
-        <div><div class="tl-name">${esc(t.name)}</div><div class="tl-steps">${t.steps}</div></div>
+        <div><div class="tl-name">${esc(d.name)}</div><div class="tl-steps">enviado -> respuesta pendiente -> seguimiento</div></div>
         <div class="subtle" style="font-size:11px;">hoy</div>
       </div>`).join("");
   }
 
-  /* ── State ── */
-  let selId = null, tone = "amable";
-  const sentMap = {};
-
-  function getD(id){ return debtors.find(d=>d.id===id); }
+  function getD(id){
+    return debtors.find(d => d.id === id);
+  }
 
   function setTone(t){
     tone = t;
-    ["A","D","U"].forEach(k=>{
-      const map={A:"amable",D:"directo",U:"ultimo"};
-      $("#t"+k).classList.toggle("active", map[k]===t);
+    ["A", "D", "U"].forEach(k => {
+      const map = { A: "amable", D: "directo", U: "ultimo" };
+      $("#t" + k).classList.toggle("active", map[k] === t);
     });
     updateMsg();
   }
@@ -856,91 +821,258 @@
   function updateMsg(){
     const d = selId ? getD(selId) : null;
     const el = $("#msgBubble");
-    if(!d){ el.textContent="Elegí un deudor para ver el mensaje."; el.classList.add("placeholder"); return; }
-    el.textContent = d.messages[tone]||"";
+    if (!d) {
+      el.textContent = "Elegi un deudor para ver el mensaje.";
+      el.classList.add("placeholder");
+      return;
+    }
+    el.textContent = d.messages[tone] || "";
     el.classList.remove("placeholder");
   }
 
   function selectDebtor(id){
-    selId = id;
     const d = getD(id);
-    $$(" #debtorsTbody tr").forEach(tr=>tr.classList.toggle("selected", tr.dataset.id===id));
+    if (!d) return;
+    selId = id;
+    $$("#debtorsTbody tr").forEach(tr => tr.classList.toggle("selected", tr.dataset.id === id));
     tone = d.defaultTone;
     setTone(tone);
     $("#panelName").textContent = d.name;
-    $("#panelMeta").textContent = `${d.days} días vencido · ${fmt(d.amount)} · ${d.status}`;
+    $("#panelMeta").textContent = `${d.days} dias vencido · ${fmt(d.amount)} · ${d.status}${d.priorityReason ? " · " + d.priorityReason : ""}`;
     $("#btnConv").disabled = false;
     $("#btnCopy").disabled = false;
     $("#btnSent").disabled = false;
     const sent = sentMap[id];
     $("#btnSent").textContent = sent ? "Enviado ✓" : "Marcar enviado";
     $("#btnSent").style.borderColor = sent ? "rgba(0,200,122,0.35)" : "";
-    // On mobile, scroll to message panel
-    if(window.innerWidth < 900){
-      setTimeout(()=>{ $("#s2 .msg-panel").scrollIntoView({behavior:"smooth", block:"start"}); }, 80);
+    if (window.innerWidth < 900) {
+      setTimeout(() => { $("#s2 .msg-panel").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
     }
   }
 
-  /* ── Modal ── */
   function openModal(){
     const d = selId ? getD(selId) : null;
-    if(!d) return;
+    if (!d) return;
     $("#chatName").textContent = d.name;
     const body = $("#chatBody");
     body.innerHTML = `<div class="chat-sys">Hoy · Mensajes simulados</div>`;
-    (d.conv[tone]||[]).forEach(m=>{
+    (d.conv[tone] || []).forEach(m => {
       const row = document.createElement("div");
-      row.className = "bubble-row " + (m.who==="sent"?"sent":"recv");
+      row.className = "bubble-row " + (m.who === "sent" ? "sent" : "recv");
       const bub = document.createElement("div");
-      bub.className = "chat-bubble " + (m.who==="sent"?"sent":"recv");
+      bub.className = "chat-bubble " + (m.who === "sent" ? "sent" : "recv");
       bub.textContent = m.text;
       row.appendChild(bub);
       body.appendChild(row);
     });
     $("#modalBg").classList.add("open");
-    setTimeout(()=>{ body.scrollTop = body.scrollHeight; }, 0);
+    setTimeout(() => { body.scrollTop = body.scrollHeight; }, 0);
   }
-  function closeModal(){ $("#modalBg").classList.remove("open"); }
 
-  /* ── Init ── */
-  renderBars();
-  renderTable();
-  renderS3();
-  setTimeout(()=>selectDebtor("rivas"), 0);
+  function closeModal(){
+    $("#modalBg").classList.remove("open");
+  }
 
-  /* ── Events ── */
-  $("#btnStart").onclick  = ()=>showScreen(2);
-  $("#btnJump").onclick   = ()=>showScreen(3);
-  $("#btnBack1").onclick  = ()=>showScreen(1);
-  $("#btnTo3").onclick    = ()=>showScreen(3);
-  $("#btnBack2").onclick  = ()=>showScreen(2);
-  $("#btnHome").onclick   = ()=>showScreen(1);
+  async function fetchDebtors(){
+    const res = await fetch("/api/debtors?sort=priority");
+    if (!res.ok) {
+      throw new Error("No se pudo cargar /api/debtors");
+    }
+    const payload = await res.json();
+    const items = Array.isArray(payload) ? payload : (payload.items || []);
+    debtors = items.map(normalizeDebtor);
+  }
 
-  $("#tA").onclick = ()=>setTone("amable");
-  $("#tD").onclick = ()=>setTone("directo");
-  $("#tU").onclick = ()=>setTone("ultimo");
+  function parseCsvRows(csvText){
+    const firstLine = csvText.split(/\r?\n/).find(line => line.trim()) || "";
+    const delimiter = (firstLine.split(";").length > firstLine.split(",").length) ? ";" : ",";
+    const rows = [];
+    let current = "";
+    let row = [];
+    let inQuotes = false;
+    for (let i = 0; i < csvText.length; i += 1) {
+      const ch = csvText[i];
+      const next = csvText[i + 1];
+      if (ch === "\"") {
+        if (inQuotes && next === "\"") {
+          current += "\"";
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === delimiter && !inQuotes) {
+        row.push(current);
+        current = "";
+      } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
+        if (ch === "\r" && next === "\n") i += 1;
+        row.push(current);
+        if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+        row = [];
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    row.push(current);
+    if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+    return rows;
+  }
 
+  function parseFlexibleDate(input){
+    if (!input) return null;
+    const value = String(input).trim();
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [d, m, y] = value.split("/").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function computeDaysOverdueFromDate(dateString){
+    const due = parseFlexibleDate(dateString);
+    if (!due) return null;
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const diffMs = startToday.getTime() - startDue.getTime();
+    return Math.max(0, Math.floor(diffMs / 86400000));
+  }
+
+  function parseCsvToImportRows(text){
+    const matrix = parseCsvRows(text);
+    if (matrix.length < 2) return [];
+    const headers = matrix[0].map(h => String(h || "").trim().toLowerCase());
+    return matrix.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((header, idx) => {
+        obj[header] = String(row[idx] || "").trim();
+      });
+      const dias = obj.dias_vencido || obj.dias || "";
+      const fechaVenc = obj.fecha_vencimiento || "";
+      const days = dias !== "" ? Number(dias) : computeDaysOverdueFromDate(fechaVenc);
+      return {
+        cliente_nombre: obj.cliente_nombre || obj.nombre || "",
+        telefono: obj.telefono || obj.phone || "",
+        monto: obj.monto || obj.importe || "",
+        dias_vencido: Number.isFinite(days) ? days : "",
+        obra: obj.obra || ""
+      };
+    });
+  }
+
+  function setImportResult(text, isError){
+    const el = $("#csvImportResult");
+    el.textContent = text;
+    el.style.color = isError ? "rgba(255,110,110,0.9)" : "rgba(0,200,122,0.9)";
+  }
+
+  async function importCsv(){
+    const fileInput = $("#csvFileInput");
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      alert("Elegi un archivo CSV.");
+      return;
+    }
+
+    const rawText = await file.text();
+    const rows = parseCsvToImportRows(rawText);
+    if (!rows.length) {
+      setImportResult("CSV vacio o sin filas validas.", true);
+      return;
+    }
+
+    const res = await fetch("/api/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Fallo la importacion.");
+    }
+    const summary = `Importacion OK: inserted ${data.inserted || 0}, updated ${data.updated || 0}, rejected ${data.rejected || 0}`;
+    setImportResult(summary, false);
+    alert(summary);
+    if (Array.isArray(data.errors) && data.errors.length) {
+      const topErrors = data.errors.slice(0, 5).map(e => `fila ${e.row}: ${e.message}`).join("\n");
+      alert(`Errores detectados:\n${topErrors}`);
+    }
+    await loadAndRenderDebtors();
+  }
+
+  async function loadAndRenderDebtors(){
+    await fetchDebtors();
+    renderBars();
+    renderTable();
+    renderS3();
+    if (debtors.length > 0) {
+      selectDebtor(debtors[0].id);
+    } else {
+      selId = null;
+      updateMsg();
+      $("#panelName").textContent = "No hay deudores cargados";
+      $("#panelMeta").textContent = "Importa un CSV para empezar.";
+    }
+  }
+
+  $("#btnStart").onclick = () => showScreen(2);
+  $("#btnJump").onclick = () => showScreen(3);
+  $("#btnBack1").onclick = () => showScreen(1);
+  $("#btnTo3").onclick = () => showScreen(3);
+  $("#btnBack2").onclick = () => showScreen(2);
+  $("#btnHome").onclick = () => showScreen(1);
+  $("#tA").onclick = () => setTone("amable");
+  $("#tD").onclick = () => setTone("directo");
+  $("#tU").onclick = () => setTone("ultimo");
   $("#btnConv").onclick = openModal;
   $("#btnClose").onclick = closeModal;
-  $("#modalBg").onclick = e=>{ if(e.target===$("#modalBg")) closeModal(); };
-  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+  $("#modalBg").onclick = e => { if (e.target === $("#modalBg")) closeModal(); };
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
-  $("#btnCopy").onclick = async()=>{
-    const txt = $("#msgBubble").textContent||"";
-    try{
+  $("#btnCopy").onclick = async () => {
+    const txt = $("#msgBubble").textContent || "";
+    try {
       await navigator.clipboard.writeText(txt);
-      const b=$("#btnCopy"), prev=b.textContent;
-      b.textContent="Copiado ✓"; setTimeout(()=>b.textContent=prev,1200);
-    }catch(e){ alert("Copiá el texto manualmente."); }
+      const b = $("#btnCopy");
+      const prev = b.textContent;
+      b.textContent = "Copiado ✓";
+      setTimeout(() => { b.textContent = prev; }, 1200);
+    } catch (e) {
+      alert("Copia el texto manualmente.");
+    }
   };
 
-  $("#btnSent").onclick = ()=>{
-    if(!selId) return;
+  $("#btnSent").onclick = () => {
+    if (!selId) return;
     sentMap[selId] = true;
     $("#btnSent").textContent = "Enviado ✓";
     $("#btnSent").style.borderColor = "rgba(0,200,122,0.35)";
     $("#btnSent").style.background = "rgba(0,200,122,0.08)";
   };
+
+  $("#btnImportCsv").onclick = async () => {
+    try {
+      await importCsv();
+    } catch (error) {
+      const message = error && error.message ? error.message : "Error al importar CSV.";
+      setImportResult(message, true);
+      alert(message);
+    }
+  };
+
+  loadAndRenderDebtors().catch((error) => {
+    setImportResult("No se pudieron cargar deudores desde /api/debtors.", true);
+    renderBars();
+    renderTable();
+    renderS3();
+    console.error(error);
+  });
 </script>
 </body>
 </html>

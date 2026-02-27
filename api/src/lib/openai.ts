@@ -1,5 +1,5 @@
 import { AzureOpenAI } from "openai";
-import { getEnv } from "./env";
+import { getOpenAiEnv } from "./env";
 import { HttpError } from "./errors";
 
 let openAiClient: AzureOpenAI | null = null;
@@ -9,7 +9,7 @@ export function getAzureOpenAiClient(): AzureOpenAI {
     return openAiClient;
   }
 
-  const env = getEnv();
+  const env = getOpenAiEnv();
 
   openAiClient = new AzureOpenAI({
     endpoint: env.AZURE_OPENAI_ENDPOINT,
@@ -26,7 +26,7 @@ export async function generateMessage(prompt: string): Promise<string> {
     throw new HttpError(400, "Prompt must not be empty.", "invalid_prompt");
   }
 
-  const env = getEnv();
+  const env = getOpenAiEnv();
   const client = getAzureOpenAiClient();
 
   const completion = await client.chat.completions.create({

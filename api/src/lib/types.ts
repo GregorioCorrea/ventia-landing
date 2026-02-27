@@ -1,5 +1,8 @@
 export type SimpleHttpRequest = {
   method: string;
+  body?: unknown;
+  query?: Record<string, string | undefined>;
+  url?: string;
 };
 
 export type SimpleHttpResponse = {
