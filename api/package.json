@@ -1,0 +1,23 @@
+{
+  "name": "cobrosmart-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Azure Static Web Apps API for CobroSmart",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "if exist dist rmdir /s /q dist",
+    "prestart": "npm run build",
+    "start": "func start --script-root dist"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.53.0",
+    "openai": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
