@@ -1,7 +1,7 @@
 import { HttpError, handleHttpError, jsonResponse } from "../lib/errors";
-import { getEnv, getOpenAiEnv } from "../lib/env";
+import { EnvValidationError, getEnv, getOpenAiEnv } from "../lib/env";
 import { getHistorySummaryByDebtorId } from "../lib/history";
-import { logInfo } from "../lib/logger";
+import { logError, logInfo } from "../lib/logger";
 import { generateMessage } from "../lib/openai";
 import { calculatePriority } from "../lib/priority";
 import { getQueryParam, getRouteParam, parseJsonBody } from "../lib/request";
@@ -40,6 +40,21 @@ function clampMessage(text: string): string {
     return clean;
   }
   return `${clean.slice(0, 277).trim()}...`;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timeout_after_${timeoutMs}ms`)), timeoutMs);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
 }
 
 function buildReasonLine(
@@ -99,6 +114,32 @@ Devuelve solo el texto final del mensaje, sin comillas ni explicaciones.
 `.trim();
 }
 
+function buildFallbackMessage(args: {
+  name: string;
+  amountArs: number;
+  tone: Tone;
+  daysOverdue: number;
+  noResponseCount: number;
+  softTreatment: boolean;
+}): string {
+  const amount = `$${Math.round(args.amountArs).toLocaleString("es-AR")}`;
+  const hi = `Hola ${args.name}, te escribo de Corralon El Puente.`;
+  const base = `Quedo pendiente ${amount} (${args.daysOverdue} dias).`;
+  const cta = "Te sirve si pagas hoy o coordinamos fecha?";
+  const softConsequence = "Asi evitamos frenar la cuenta corriente y seguimos entregando normal.";
+
+  if (args.tone === "ultimo") {
+    return clampMessage(`${hi} ${base} ${cta} ${softConsequence}`);
+  }
+  if (args.tone === "directo" || args.noResponseCount >= 2) {
+    return clampMessage(`${hi} ${base} Necesito confirmacion concreta hoy. ${cta}`);
+  }
+  if (args.softTreatment) {
+    return clampMessage(`${hi} ${base} Queremos cuidarte la cuenta y ordenarla. ${cta}`);
+  }
+  return clampMessage(`${hi} ${base} ${cta}`);
+}
+
 export async function run(context: SimpleContext, req: SimpleHttpRequest): Promise<void> {
   try {
     if (req.method !== "POST") {
@@ -123,7 +164,18 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     const body = parseJsonBody<MessageRequest>(req.body ?? {}, "invalid_json");
     const tone = normalizeTone(body.tone);
     const regenerate = normalizeRegenerate(body.regenerate ?? getQueryParam(req, "regenerate"));
-    const openAiEnv = getOpenAiEnv();
+    let modelName = "local-fallback";
+    let openAiReady = false;
+    try {
+      const openAiEnv = getOpenAiEnv();
+      modelName = openAiEnv.AZURE_OPENAI_DEPLOYMENT_NAME;
+      openAiReady = true;
+    } catch (error) {
+      if (!(error instanceof EnvValidationError)) {
+        throw error;
+      }
+      logError(context, "OpenAI env not configured. Using fallback message mode.", error.missing);
+    }
 
     const supabase = getSupabaseClient();
     const debtor = await getDebtorOrThrow(supabase, env.COBROSMART_BUSINESS_ID, debtorId);
@@ -144,7 +196,7 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
         context.res = jsonResponse(200, {
           message_text: cached.message_text,
           reason: cached.message_reason || "",
-          model: cached.model || openAiEnv.AZURE_OPENAI_DEPLOYMENT_NAME,
+          model: cached.model || modelName,
           cached: true
         });
         return;
@@ -170,22 +222,43 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       softTreatment: priority.soft_treatment
     });
 
-    const rawMessage = await generateMessage(prompt);
-    const messageText = clampMessage(rawMessage);
     const reason = buildReasonLine(
       tone,
       debtor.days_overdue,
       history.no_response,
       priority.soft_treatment
     );
+    let messageText: string;
+    let finalReason = reason;
+    let usedFallback = false;
+
+    try {
+      if (!openAiReady) {
+        throw new Error("openai_not_configured");
+      }
+      const rawMessage = await withTimeout(generateMessage(prompt), 25000);
+      messageText = clampMessage(rawMessage);
+    } catch (generationError) {
+      usedFallback = true;
+      logError(context, "OpenAI generation failed, using fallback message.", generationError);
+      messageText = buildFallbackMessage({
+        name: debtor.name,
+        amountArs: debtor.amount_ars,
+        tone,
+        daysOverdue: debtor.days_overdue,
+        noResponseCount: history.no_response,
+        softTreatment: priority.soft_treatment
+      });
+      finalReason = `${reason} / fallback local`;
+    }
 
     const { error: cacheWriteError } = await supabase.from("message_cache").upsert(
       {
         debtor_id: debtorId,
         tone,
         message_text: messageText,
-        message_reason: reason,
-        model: openAiEnv.AZURE_OPENAI_DEPLOYMENT_NAME,
+        message_reason: finalReason,
+        model: modelName,
         created_at: new Date().toISOString()
       },
       { onConflict: "debtor_id,tone" }
@@ -198,9 +271,10 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     logInfo(context, "Debtor message generated", { debtorId, tone, regenerate });
     context.res = jsonResponse(200, {
       message_text: messageText,
-      reason,
-      model: openAiEnv.AZURE_OPENAI_DEPLOYMENT_NAME,
-      cached: false
+      reason: finalReason,
+      model: modelName,
+      cached: false,
+      fallback: usedFallback
     });
   } catch (error) {
     context.res = handleHttpError(context, error);

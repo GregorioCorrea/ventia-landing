@@ -863,8 +863,20 @@
     $("#btnPaid").disabled = false;
     $("#btnNoResponse").disabled = false;
     $("#btnPromise").disabled = false;
-    await loadSelectedMessage(false);
-    await loadSelectedEvents();
+    try {
+      await loadSelectedMessage(false);
+    } catch (error) {
+      currentMessageText = "";
+      currentMessageReason = "mensaje IA no disponible";
+      currentMessageCached = false;
+      updateMsgBubble("No se pudo generar mensaje IA ahora. Proba Regenerar.");
+      updatePanelMeta(d);
+    }
+    try {
+      await loadSelectedEvents();
+    } catch (error) {
+      eventsByDebtor.set(d.id, []);
+    }
     if (window.innerWidth < 900) {
       setTimeout(() => { $("#s2 .msg-panel").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
     }
@@ -1147,9 +1159,33 @@
   $("#btnTo3").onclick = async () => { await renderS3(); showScreen(3); };
   $("#btnBack2").onclick = () => showScreen(2);
   $("#btnHome").onclick = () => showScreen(1);
-  $("#tA").onclick = async () => { tone = "amable"; setToneUi(tone); await loadSelectedMessage(false); };
-  $("#tD").onclick = async () => { tone = "directo"; setToneUi(tone); await loadSelectedMessage(false); };
-  $("#tU").onclick = async () => { tone = "ultimo"; setToneUi(tone); await loadSelectedMessage(false); };
+  $("#tA").onclick = async () => {
+    tone = "amable";
+    setToneUi(tone);
+    try {
+      await loadSelectedMessage(false);
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo generar mensaje IA.");
+    }
+  };
+  $("#tD").onclick = async () => {
+    tone = "directo";
+    setToneUi(tone);
+    try {
+      await loadSelectedMessage(false);
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo generar mensaje IA.");
+    }
+  };
+  $("#tU").onclick = async () => {
+    tone = "ultimo";
+    setToneUi(tone);
+    try {
+      await loadSelectedMessage(false);
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo generar mensaje IA.");
+    }
+  };
   $("#btnConv").onclick = openModal;
   $("#btnClose").onclick = closeModal;
   $("#modalBg").onclick = e => { if (e.target === $("#modalBg")) closeModal(); };
