@@ -9,6 +9,9 @@ Backend minimo en Node.js + TypeScript para Azure Static Web Apps.
 - `GET /api/debug/db-check` -> valida conectividad con Supabase y devuelve `{ "ok": true }`
 - `POST /api/import` -> importa filas CSV normalizadas y devuelve `{ inserted, updated, rejected, errors }`
 - `GET /api/debtors?sort=priority` -> lista deudores del business configurado
+- `POST /api/debtors/{id}/message` -> genera mensaje IA WhatsApp (cache por `debtor_id + tone`)
+- `POST /api/debtors/{id}/status` -> registra estado (`sent`, `promise`, `paid`, `no_response`, `replied`) y recalcula prioridad
+- `GET /api/debtors/{id}/events?limit=20` -> timeline de eventos del deudor
 
 ## Base de datos (versionada)
 
@@ -64,6 +67,9 @@ Configura estas variables exactamente con estos nombres:
    - `POST http://localhost:7071/api/bootstrap`
    - `POST http://localhost:7071/api/import`
    - `GET http://localhost:7071/api/debtors?sort=priority`
+   - `POST http://localhost:7071/api/debtors/<id>/message`
+   - `POST http://localhost:7071/api/debtors/<id>/status`
+   - `GET http://localhost:7071/api/debtors/<id>/events?limit=20`
 
 ## Importacion CSV (demo)
 
@@ -86,6 +92,20 @@ Como probar importacion en la demo (`/staticdemo/index.html`):
 3. Presionar `Importar CSV`.
 4. Ver resumen `inserted/updated/rejected`.
 5. Ir a Pantalla 2 y validar lista priorizada desde `GET /api/debtors?sort=priority`.
+
+## Como probar IA + estados en demo
+
+IA (mensaje):
+1. En Pantalla 2, hacer click en un deudor.
+2. Cambiar tono (`Amable`, `Directo`, `Ultimo aviso`).
+3. Ver mensaje generado por backend (`POST /api/debtors/{id}/message`).
+4. Boton `Regenerar` fuerza nuevo mensaje (omite cache).
+
+Estados/timeline:
+1. En Pantalla 2 usar `Marcar enviado`, `Pago`, `Prometio` o `Sin respuesta`.
+2. Para `Prometio`, cargar fecha/hora y confirmar.
+3. Cada accion guarda evento en `debtor_event` y actualiza prioridad en `debtor`.
+4. `Ver conversacion` muestra timeline real desde `GET /api/debtors/{id}/events`.
 
 Ejemplo de payload para prueba manual:
 ```json

@@ -1,12 +1,14 @@
 import {
-  computePriority,
   normalizeImportRow,
   type ImportRowInput,
   type NormalizedRow
 } from "../lib/debtor-utils";
 import { HttpError, handleHttpError, jsonResponse } from "../lib/errors";
 import { getEnv } from "../lib/env";
+import { getHistorySummaryByDebtorIds } from "../lib/history";
 import { logInfo } from "../lib/logger";
+import { calculatePriority } from "../lib/priority";
+import { parseJsonBody } from "../lib/request";
 import { getSupabaseClient } from "../lib/supabase";
 import type { SimpleContext, SimpleHttpRequest } from "../lib/types";
 
@@ -19,18 +21,13 @@ type ExistingDebtor = {
   id: string;
   phone: string;
   last_status: string | null;
+  days_overdue: number;
+  amount_ars: number;
+  note: string | null;
 };
 
 function getRowsFromBody(body: unknown): ImportRowInput[] {
-  let parsed: unknown = body;
-  if (typeof body === "string") {
-    try {
-      parsed = JSON.parse(body);
-    } catch {
-      throw new HttpError(400, "Body is not valid JSON.", "invalid_json");
-    }
-  }
-
+  const parsed = parseJsonBody<{ rows?: ImportRowInput[] }>(body, "invalid_json");
   if (!parsed || typeof parsed !== "object" || !Array.isArray((parsed as { rows?: unknown }).rows)) {
     throw new HttpError(400, "Body must be JSON: { rows: [...] }", "invalid_payload");
   }
@@ -79,7 +76,7 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     if (uniquePhones.length > 0) {
       const { data: existingRows, error: existingError } = await supabase
         .from("debtor")
-        .select("id, phone, last_status")
+        .select("id, phone, last_status, days_overdue, amount_ars, note")
         .eq("business_id", env.COBROSMART_BUSINESS_ID)
         .in("phone", uniquePhones);
 
@@ -94,6 +91,9 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       });
     }
 
+    const existingDebtorIds = Array.from(existingByPhone.values()).map((x) => x.id);
+    const historyMap = await getHistorySummaryByDebtorIds(supabase, existingDebtorIds);
+
     let inserted = 0;
     let updated = 0;
     let rejected = rows.length - validRows.length;
@@ -101,9 +101,24 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     for (const row of validRows) {
       const existing = existingByPhone.get(row.data.phone);
       const currentStatus = existing?.last_status ?? "new";
-      const priority = computePriority(row.data.daysOverdue, row.data.amountArs, currentStatus);
 
       if (existing) {
+        const historySummary = historyMap.get(existing.id) || {
+          sent: 0,
+          no_response: 0,
+          promise: 0,
+          paid: 0,
+          replied: 0
+        };
+        const priority = calculatePriority(
+          {
+            days_overdue: row.data.daysOverdue,
+            amount_ars: row.data.amountArs,
+            note: row.data.note
+          },
+          historySummary
+        );
+
         const { error: updateError } = await supabase
           .from("debtor")
           .update({
@@ -113,8 +128,8 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
             days_overdue: row.data.daysOverdue,
             note: row.data.note,
             last_status: currentStatus,
-            priority_score: priority.score,
-            priority_reason: priority.reason,
+            priority_score: priority.priority_score,
+            priority_reason: priority.priority_reason,
             updated_at: new Date().toISOString()
           })
           .eq("id", existing.id);
@@ -134,6 +149,21 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
         continue;
       }
 
+      const priority = calculatePriority(
+        {
+          days_overdue: row.data.daysOverdue,
+          amount_ars: row.data.amountArs,
+          note: row.data.note
+        },
+        {
+          sent: 0,
+          no_response: 0,
+          promise: 0,
+          paid: 0,
+          replied: 0
+        }
+      );
+
       const { data: insertedRow, error: insertError } = await supabase
         .from("debtor")
         .insert({
@@ -144,10 +174,10 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
           days_overdue: row.data.daysOverdue,
           note: row.data.note,
           last_status: "new",
-          priority_score: priority.score,
-          priority_reason: priority.reason
+          priority_score: priority.priority_score,
+          priority_reason: priority.priority_reason
         })
-        .select("id, phone, last_status")
+        .select("id, phone, last_status, days_overdue, amount_ars, note")
         .single();
 
       if (insertError || !insertedRow) {

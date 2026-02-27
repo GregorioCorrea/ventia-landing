@@ -2,6 +2,7 @@ export type SimpleHttpRequest = {
   method: string;
   body?: unknown;
   query?: Record<string, string | undefined>;
+  params?: Record<string, string | undefined>;
   url?: string;
 };
 
@@ -13,6 +14,7 @@ export type SimpleHttpResponse = {
 
 export type SimpleContext = {
   invocationId?: string;
+  bindingData?: Record<string, unknown>;
   log?: {
     (message: string, ...args: unknown[]): void;
     error?: (message: string, ...args: unknown[]) => void;

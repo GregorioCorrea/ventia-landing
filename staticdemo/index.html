@@ -555,8 +555,15 @@
           </div>
 
           <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" id="btnRegenerate" disabled>Regenerar</button>
             <button class="btn btn-ghost btn-sm" id="btnCopy" disabled>Copiar texto</button>
             <button class="btn btn-ghost btn-sm" id="btnSent" disabled>Marcar enviado</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" id="btnPaid" disabled>Pago</button>
+            <button class="btn btn-ghost btn-sm" id="btnNoResponse" disabled>Sin respuesta</button>
+            <input id="promiseDateInput" type="datetime-local" style="max-width:220px;" />
+            <button class="btn btn-ghost btn-sm" id="btnPromise" disabled>Prometio</button>
           </div>
 
           <div class="hint-card">
@@ -584,18 +591,18 @@
       <div class="results-grid">
         <div class="result-box rb-green">
           <div class="r-label">Pagaron</div>
-          <div class="r-value">$186.900</div>
-          <div class="r-sub">Nico Barrionuevo</div>
+          <div class="r-value" id="s3PaidValue">$0</div>
+          <div class="r-sub" id="s3PaidSub">Sin pagos hoy</div>
         </div>
         <div class="result-box rb-yellow">
           <div class="r-label">Prometieron</div>
-          <div class="r-value">$78.300</div>
-          <div class="r-sub">Mariela Sosa — viernes 9:30</div>
+          <div class="r-value" id="s3PromiseValue">$0</div>
+          <div class="r-sub" id="s3PromiseSub">Sin promesas hoy</div>
         </div>
         <div class="result-box rb-gray">
           <div class="r-label">Sin respuesta</div>
-          <div class="r-value">$910.400</div>
-          <div class="r-sub">Obras Rivas + Cuadrilla Los Hermanos</div>
+          <div class="r-value" id="s3NoResponseValue">$0</div>
+          <div class="r-sub" id="s3NoResponseSub">Sin pendientes hoy</div>
         </div>
       </div>
 
@@ -661,7 +668,10 @@
   let debtors = [];
   let selId = null;
   let tone = "amable";
-  const sentMap = {};
+  let currentMessageText = "";
+  let currentMessageReason = "";
+  let currentMessageCached = false;
+  const eventsByDebtor = new Map();
 
   function showScreen(n){
     $$(".screen").forEach(s => s.classList.remove("active"));
@@ -675,16 +685,17 @@
   }
 
   function statusLabel(lastStatus){
-    if (lastStatus === "ignored") return "Ignoro";
-    if (lastStatus === "promised") return "Prometio";
+    if (lastStatus === "no_response") return "Sin respuesta";
+    if (lastStatus === "promise") return "Prometio";
     if (lastStatus === "paid") return "Pago";
-    if (lastStatus === "contacted") return "Contactado";
+    if (lastStatus === "replied") return "Respondio";
+    if (lastStatus === "sent") return "Enviado";
     return "Nuevo";
   }
 
   function scoreColor(priorityScore, days){
-    if ((priorityScore || 0) >= 180 || days >= 45) return "red";
-    if ((priorityScore || 0) >= 90 || days >= 20) return "yellow";
+    if ((priorityScore || 0) >= 70 || days >= 45) return "red";
+    if ((priorityScore || 0) >= 45 || days >= 20) return "yellow";
     return "green";
   }
 
@@ -694,52 +705,26 @@
     return "amable";
   }
 
-  function buildMessages(d){
-    return {
-      amable: `Hola ${d.name}, te escribo por la cuenta pendiente del corralon: ${fmt(d.amount)} (${d.days} dias). Si queres lo dejamos ordenado hoy.`,
-      directo: `Hola ${d.name}, quedo pendiente ${fmt(d.amount)} (${d.days} dias vencidos). Confirmame por favor una fecha concreta de pago.`,
-      ultimo: `Hola ${d.name}, ultimo aviso por saldo pendiente ${fmt(d.amount)} (${d.days} dias). Necesito confirmacion hoy o comprobante si ya fue abonado.`
-    };
-  }
-
-  function buildConversation(d){
-    return {
-      amable: [
-        { who: "sent", text: d.messages.amable },
-        { who: "recv", text: "Recibido, hoy lo reviso." }
-      ],
-      directo: [
-        { who: "sent", text: d.messages.directo },
-        { who: "recv", text: "Te confirmo en un rato." }
-      ],
-      ultimo: [
-        { who: "sent", text: d.messages.ultimo },
-        { who: "recv", text: "Entendido, te paso fecha hoy." }
-      ]
-    };
-  }
-
   function normalizeDebtor(raw){
     const id = raw.id || `${raw.phone || "d"}-${Math.random().toString(36).slice(2, 8)}`;
     const days = Number(raw.days_overdue || 0);
     const amount = Number(raw.amount_ars || 0);
-    const sc = scoreColor(raw.priority_score, days);
-    const debtor = {
+    const priorityScore = Number(raw.priority_score || 0);
+    const sc = scoreColor(priorityScore, days);
+    return {
       id,
       name: raw.name || "Sin nombre",
       phone: raw.phone || "",
       days,
       amount,
+      lastStatus: raw.last_status || "new",
       status: statusLabel(raw.last_status),
       sc,
+      priorityScore,
       priorityReason: raw.priority_reason || "",
-      defaultTone: defaultToneByScore(sc),
-      messages: null,
-      conv: null
+      promiseDate: raw.promise_date || null,
+      defaultTone: defaultToneByScore(sc)
     };
-    debtor.messages = buildMessages(debtor);
-    debtor.conv = buildConversation(debtor);
-    return debtor;
   }
 
   function computeBuckets(items){
@@ -790,7 +775,7 @@
     });
   }
 
-  function renderS3(){
+  async function renderS3(){
     const rankItems = [...debtors].slice(0, 4);
     $("#ranking").innerHTML = rankItems.map(d => `
       <div class="tl-item">
@@ -798,53 +783,88 @@
         <div>${badge(d.sc, d.status)}</div>
       </div>`).join("");
 
-    $("#timeline").innerHTML = rankItems.map(d => `
+    const summary = await computeDailySummary();
+    $("#s3PaidValue").textContent = fmt(summary.paidAmount);
+    $("#s3PaidSub").textContent = summary.paidNames.length ? summary.paidNames.join(" + ") : "Sin pagos hoy";
+    $("#s3PromiseValue").textContent = fmt(summary.promiseAmount);
+    $("#s3PromiseSub").textContent = summary.promiseNames.length ? summary.promiseNames.join(" + ") : "Sin promesas hoy";
+    $("#s3NoResponseValue").textContent = fmt(summary.noResponseAmount);
+    $("#s3NoResponseSub").textContent = summary.noResponseNames.length ? summary.noResponseNames.join(" + ") : "Sin no respuesta hoy";
+
+    $("#timeline").innerHTML = summary.timeline.slice(0, 6).map(t => `
       <div class="tl-item">
-        <div><div class="tl-name">${esc(d.name)}</div><div class="tl-steps">enviado -> respuesta pendiente -> seguimiento</div></div>
+        <div><div class="tl-name">${esc(t.name)}</div><div class="tl-steps">${esc(t.type)} · ${new Date(t.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</div></div>
         <div class="subtle" style="font-size:11px;">hoy</div>
-      </div>`).join("");
+      </div>`).join("") || `
+      <div class="tl-item">
+        <div><div class="tl-name">Sin eventos hoy</div><div class="tl-steps">Todavia no se registraron cambios.</div></div>
+        <div class="subtle" style="font-size:11px;">hoy</div>
+      </div>`;
   }
 
   function getD(id){
     return debtors.find(d => d.id === id);
   }
 
-  function setTone(t){
-    tone = t;
+  function setToneUi(t){
     ["A", "D", "U"].forEach(k => {
       const map = { A: "amable", D: "directo", U: "ultimo" };
       $("#t" + k).classList.toggle("active", map[k] === t);
     });
-    updateMsg();
   }
 
-  function updateMsg(){
-    const d = selId ? getD(selId) : null;
+  function updateMsgBubble(text){
     const el = $("#msgBubble");
-    if (!d) {
+    if (!text) {
       el.textContent = "Elegi un deudor para ver el mensaje.";
       el.classList.add("placeholder");
       return;
     }
-    el.textContent = d.messages[tone] || "";
+    el.textContent = text;
     el.classList.remove("placeholder");
   }
 
-  function selectDebtor(id){
+  function updatePanelMeta(d){
+    $("#panelName").textContent = d.name;
+    $("#panelMeta").textContent = `${d.days} dias vencido · ${fmt(d.amount)} · ${d.status}${d.priorityReason ? " · " + d.priorityReason : ""}${currentMessageReason ? " · " + currentMessageReason : ""}${currentMessageCached ? " · cache" : ""}`;
+  }
+
+  async function loadSelectedMessage(regenerate = false){
+    const d = selId ? getD(selId) : null;
+    if (!d) return;
+    updateMsgBubble("Generando mensaje IA...");
+    const data = await fetchDebtorMessage(d.id, tone, regenerate);
+    currentMessageText = data.message_text || "";
+    currentMessageReason = data.reason || "";
+    currentMessageCached = !!data.cached;
+    updateMsgBubble(currentMessageText);
+    updatePanelMeta(d);
+  }
+
+  async function loadSelectedEvents(){
+    const d = selId ? getD(selId) : null;
+    if (!d) return;
+    const items = await fetchDebtorEvents(d.id, 20);
+    eventsByDebtor.set(d.id, items);
+  }
+
+  async function selectDebtor(id){
     const d = getD(id);
     if (!d) return;
     selId = id;
     $$("#debtorsTbody tr").forEach(tr => tr.classList.toggle("selected", tr.dataset.id === id));
     tone = d.defaultTone;
-    setTone(tone);
-    $("#panelName").textContent = d.name;
-    $("#panelMeta").textContent = `${d.days} dias vencido · ${fmt(d.amount)} · ${d.status}${d.priorityReason ? " · " + d.priorityReason : ""}`;
+    setToneUi(tone);
+    updatePanelMeta(d);
     $("#btnConv").disabled = false;
+    $("#btnRegenerate").disabled = false;
     $("#btnCopy").disabled = false;
     $("#btnSent").disabled = false;
-    const sent = sentMap[id];
-    $("#btnSent").textContent = sent ? "Enviado ✓" : "Marcar enviado";
-    $("#btnSent").style.borderColor = sent ? "rgba(0,200,122,0.35)" : "";
+    $("#btnPaid").disabled = false;
+    $("#btnNoResponse").disabled = false;
+    $("#btnPromise").disabled = false;
+    await loadSelectedMessage(false);
+    await loadSelectedEvents();
     if (window.innerWidth < 900) {
       setTimeout(() => { $("#s2 .msg-panel").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
     }
@@ -855,16 +875,27 @@
     if (!d) return;
     $("#chatName").textContent = d.name;
     const body = $("#chatBody");
-    body.innerHTML = `<div class="chat-sys">Hoy · Mensajes simulados</div>`;
-    (d.conv[tone] || []).forEach(m => {
+    body.innerHTML = `<div class="chat-sys">Timeline de eventos</div>`;
+    const events = eventsByDebtor.get(d.id) || [];
+    events.forEach((event, idx) => {
       const row = document.createElement("div");
-      row.className = "bubble-row " + (m.who === "sent" ? "sent" : "recv");
+      row.className = "bubble-row " + (idx % 2 === 0 ? "sent" : "recv");
       const bub = document.createElement("div");
-      bub.className = "chat-bubble " + (m.who === "sent" ? "sent" : "recv");
-      bub.textContent = m.text;
+      bub.className = "chat-bubble " + (idx % 2 === 0 ? "sent" : "recv");
+      const label = event.type === "no_response" ? "Sin respuesta" : event.type;
+      bub.textContent = `${label} · ${new Date(event.created_at).toLocaleString("es-AR")}`;
       row.appendChild(bub);
       body.appendChild(row);
     });
+    if (currentMessageText) {
+      const row = document.createElement("div");
+      row.className = "bubble-row sent";
+      const bub = document.createElement("div");
+      bub.className = "chat-bubble sent";
+      bub.textContent = currentMessageText;
+      row.appendChild(bub);
+      body.appendChild(row);
+    }
     $("#modalBg").classList.add("open");
     setTimeout(() => { body.scrollTop = body.scrollHeight; }, 0);
   }
@@ -881,6 +912,94 @@
     const payload = await res.json();
     const items = Array.isArray(payload) ? payload : (payload.items || []);
     debtors = items.map(normalizeDebtor);
+  }
+
+  async function fetchDebtorMessage(debtorId, messageTone, regenerate){
+    const res = await fetch(`/api/debtors/${encodeURIComponent(debtorId)}/message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tone: messageTone, regenerate: !!regenerate })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.message || "No se pudo generar mensaje IA.");
+    }
+    return payload;
+  }
+
+  async function fetchDebtorEvents(debtorId, limit = 20){
+    const res = await fetch(`/api/debtors/${encodeURIComponent(debtorId)}/events?limit=${limit}`);
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.message || "No se pudieron cargar eventos.");
+    }
+    return payload.items || [];
+  }
+
+  async function updateDebtorStatus(status, promiseDate){
+    if (!selId) return;
+    const body = { status };
+    if (promiseDate) {
+      body.promise_date = promiseDate;
+    }
+    const res = await fetch(`/api/debtors/${encodeURIComponent(selId)}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.message || "No se pudo actualizar estado.");
+    }
+    await loadAndRenderDebtors(selId);
+    await loadSelectedEvents();
+  }
+
+  function isToday(dateIso){
+    if (!dateIso) return false;
+    const d = new Date(dateIso);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear()
+      && d.getMonth() === now.getMonth()
+      && d.getDate() === now.getDate();
+  }
+
+  async function computeDailySummary(){
+    const summary = {
+      paidAmount: 0,
+      paidNames: [],
+      promiseAmount: 0,
+      promiseNames: [],
+      noResponseAmount: 0,
+      noResponseNames: [],
+      timeline: []
+    };
+
+    const checks = await Promise.all(debtors.map(async debtor => {
+      const events = await fetchDebtorEvents(debtor.id, 10);
+      eventsByDebtor.set(debtor.id, events);
+      const todayEvents = events.filter(e => isToday(e.created_at));
+      return { debtor, todayEvents };
+    }));
+
+    checks.forEach(({ debtor, todayEvents }) => {
+      todayEvents.forEach(e => {
+        summary.timeline.push({ name: debtor.name, type: e.type, created_at: e.created_at });
+      });
+      if (todayEvents.some(e => e.type === "paid")) {
+        summary.paidAmount += debtor.amount;
+        summary.paidNames.push(debtor.name);
+      } else if (todayEvents.some(e => e.type === "promise")) {
+        summary.promiseAmount += debtor.amount;
+        summary.promiseNames.push(debtor.name);
+      } else if (todayEvents.some(e => e.type === "no_response")) {
+        summary.noResponseAmount += debtor.amount;
+        summary.noResponseNames.push(debtor.name);
+      }
+    });
+
+    summary.timeline.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return summary;
   }
 
   function parseCsvRows(csvText){
@@ -1003,19 +1122,20 @@
       const topErrors = data.errors.slice(0, 5).map(e => `fila ${e.row}: ${e.message}`).join("\n");
       alert(`Errores detectados:\n${topErrors}`);
     }
-    await loadAndRenderDebtors();
+    await loadAndRenderDebtors(selId);
   }
 
-  async function loadAndRenderDebtors(){
+  async function loadAndRenderDebtors(preferredId = null){
     await fetchDebtors();
     renderBars();
     renderTable();
-    renderS3();
+    await renderS3();
     if (debtors.length > 0) {
-      selectDebtor(debtors[0].id);
+      const target = preferredId && getD(preferredId) ? preferredId : debtors[0].id;
+      await selectDebtor(target);
     } else {
       selId = null;
-      updateMsg();
+      updateMsgBubble("");
       $("#panelName").textContent = "No hay deudores cargados";
       $("#panelMeta").textContent = "Importa un CSV para empezar.";
     }
@@ -1024,12 +1144,12 @@
   $("#btnStart").onclick = () => showScreen(2);
   $("#btnJump").onclick = () => showScreen(3);
   $("#btnBack1").onclick = () => showScreen(1);
-  $("#btnTo3").onclick = () => showScreen(3);
+  $("#btnTo3").onclick = async () => { await renderS3(); showScreen(3); };
   $("#btnBack2").onclick = () => showScreen(2);
   $("#btnHome").onclick = () => showScreen(1);
-  $("#tA").onclick = () => setTone("amable");
-  $("#tD").onclick = () => setTone("directo");
-  $("#tU").onclick = () => setTone("ultimo");
+  $("#tA").onclick = async () => { tone = "amable"; setToneUi(tone); await loadSelectedMessage(false); };
+  $("#tD").onclick = async () => { tone = "directo"; setToneUi(tone); await loadSelectedMessage(false); };
+  $("#tU").onclick = async () => { tone = "ultimo"; setToneUi(tone); await loadSelectedMessage(false); };
   $("#btnConv").onclick = openModal;
   $("#btnClose").onclick = closeModal;
   $("#modalBg").onclick = e => { if (e.target === $("#modalBg")) closeModal(); };
@@ -1048,12 +1168,53 @@
     }
   };
 
-  $("#btnSent").onclick = () => {
-    if (!selId) return;
-    sentMap[selId] = true;
-    $("#btnSent").textContent = "Enviado ✓";
-    $("#btnSent").style.borderColor = "rgba(0,200,122,0.35)";
-    $("#btnSent").style.background = "rgba(0,200,122,0.08)";
+  $("#btnRegenerate").onclick = async () => {
+    try {
+      await loadSelectedMessage(true);
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo regenerar.");
+    }
+  };
+
+  $("#btnSent").onclick = async () => {
+    try {
+      await updateDebtorStatus("sent");
+      alert("Estado guardado: enviado.");
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo guardar estado.");
+    }
+  };
+
+  $("#btnPaid").onclick = async () => {
+    try {
+      await updateDebtorStatus("paid");
+      alert("Estado guardado: pago.");
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo guardar estado.");
+    }
+  };
+
+  $("#btnNoResponse").onclick = async () => {
+    try {
+      await updateDebtorStatus("no_response");
+      alert("Estado guardado: sin respuesta.");
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo guardar estado.");
+    }
+  };
+
+  $("#btnPromise").onclick = async () => {
+    const promiseDate = $("#promiseDateInput").value;
+    if (!promiseDate) {
+      alert("Ingresa fecha/hora de promesa.");
+      return;
+    }
+    try {
+      await updateDebtorStatus("promise", promiseDate);
+      alert("Estado guardado: prometio.");
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo guardar estado.");
+    }
   };
 
   $("#btnImportCsv").onclick = async () => {
@@ -1070,7 +1231,7 @@
     setImportResult("No se pudieron cargar deudores desde /api/debtors.", true);
     renderBars();
     renderTable();
-    renderS3();
+    renderS3().catch(() => {});
     console.error(error);
   });
 </script>

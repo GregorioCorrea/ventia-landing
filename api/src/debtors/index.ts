@@ -46,7 +46,7 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     let query = supabase
       .from("debtor")
       .select(
-        "id, name, phone, amount_ars, days_overdue, note, last_status, priority_score, priority_reason"
+        "id, name, phone, amount_ars, days_overdue, note, last_status, last_contact_at, promise_date, priority_score, priority_reason"
       )
       .eq("business_id", env.COBROSMART_BUSINESS_ID);
 
