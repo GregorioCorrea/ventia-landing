@@ -14,5 +14,6 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/health/index.js"
+  "scriptFile": "../dist/health/index.js",
+  "entryPoint": "run"
 }

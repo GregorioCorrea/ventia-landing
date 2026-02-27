@@ -2,7 +2,7 @@ import { handleHttpError } from "../lib/errors";
 import { logInfo } from "../lib/logger";
 import type { SimpleContext, SimpleHttpRequest } from "../lib/types";
 
-const healthFunction = async function (context: SimpleContext, req: SimpleHttpRequest): Promise<void> {
+export async function run(context: SimpleContext, req: SimpleHttpRequest): Promise<void> {
   try {
     if (req.method !== "GET") {
       context.res = {
@@ -20,6 +20,4 @@ const healthFunction = async function (context: SimpleContext, req: SimpleHttpRe
   } catch (error) {
     context.res = handleHttpError(context, error);
   }
-};
-
-export default healthFunction;
+}
