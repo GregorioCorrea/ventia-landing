@@ -4,7 +4,8 @@ export type SimpleHttpRequest = {
 
 export type SimpleHttpResponse = {
   status: number;
-  jsonBody: Record<string, unknown>;
+  body: string;
+  headers?: Record<string, string>;
 };
 
 export type SimpleContext = {

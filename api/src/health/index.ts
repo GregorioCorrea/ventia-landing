@@ -7,7 +7,12 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     if (req.method !== "GET") {
       context.res = {
         status: 405,
-        jsonBody: { ok: false, error: "method_not_allowed", message: "Only GET is allowed." }
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({
+          ok: false,
+          error: "method_not_allowed",
+          message: "Only GET is allowed."
+        })
       };
       return;
     }
@@ -15,7 +20,8 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     logInfo(context, "Health endpoint called");
     context.res = {
       status: 200,
-      jsonBody: { ok: true, service: "cobrosmart-api" }
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ ok: true, service: "cobrosmart-api" })
     };
   } catch (error) {
     context.res = handleHttpError(context, error);
