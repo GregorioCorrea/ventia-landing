@@ -1,7 +1,7 @@
 # CobroSmart API (Azure Static Web Apps Functions)
 
 Backend minimo en Node.js + TypeScript para Azure Static Web Apps.
-
+ 
 ## Endpoint disponible
 
 - `GET /api/health` -> `{ "ok": true, "service": "cobrosmart-api" }`
