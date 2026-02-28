@@ -12,10 +12,13 @@ Backend minimo en Node.js + TypeScript para Azure Static Web Apps.
 - `POST /api/debtors/{id}/message` -> genera mensaje IA WhatsApp (cache por `debtor_id + tone`)
 - `POST /api/debtors/{id}/status` -> registra estado (`sent`, `promise`, `paid`, `no_response`, `replied`) y recalcula prioridad
 - `GET /api/debtors/{id}/events?limit=20` -> timeline de eventos del deudor
+- `GET /api/settings` -> carga Business AI Context del negocio
+- `POST /api/settings` -> guarda/actualiza Business AI Context (upsert)
 
 ## Base de datos (versionada)
 
 - Archivo SQL inicial: `db/001_init.sql`
+- Migracion de IA/contexto: `db/002_business_ai_context.sql`
 - Incluye tablas:
   - `business`
   - `debtor`
@@ -25,6 +28,7 @@ Backend minimo en Node.js + TypeScript para Azure Static Web Apps.
 Paso humano inicial:
 1. Abrir Supabase SQL Editor.
 2. Ejecutar el contenido de `db/001_init.sql`.
+3. Ejecutar el contenido de `db/002_business_ai_context.sql`.
 
 ## Variables de entorno (Azure Static Web Apps > Application settings)
 
@@ -70,6 +74,8 @@ Configura estas variables exactamente con estos nombres:
    - `POST http://localhost:7071/api/debtors/<id>/message`
    - `POST http://localhost:7071/api/debtors/<id>/status`
    - `GET http://localhost:7071/api/debtors/<id>/events?limit=20`
+   - `GET http://localhost:7071/api/settings`
+   - `POST http://localhost:7071/api/settings`
 
 ## Importacion CSV (demo)
 
@@ -98,14 +104,21 @@ Como probar importacion en la demo (`/staticdemo/index.html`):
 IA (mensaje):
 1. En Pantalla 2, hacer click en un deudor.
 2. Cambiar tono (`Amable`, `Directo`, `Ultimo aviso`).
-3. Ver mensaje generado por backend (`POST /api/debtors/{id}/message`).
+3. Ver mensaje generado por backend (`POST /api/debtors/{id}/message`) con contexto configurable.
 4. Boton `Regenerar` fuerza nuevo mensaje (omite cache).
 
 Estados/timeline:
 1. En Pantalla 2 usar `Marcar enviado`, `Pago`, `Prometio` o `Sin respuesta`.
 2. Para `Prometio`, cargar fecha/hora y confirmar.
 3. Cada accion guarda evento en `debtor_event` y actualiza prioridad en `debtor`.
-4. `Ver conversacion` muestra timeline real desde `GET /api/debtors/{id}/events`.
+4. `Marcar enviado` guarda `message_text`, `tone` y `channel` para memoria en regeneraciones futuras.
+5. `Ver conversacion` muestra timeline real desde `GET /api/debtors/{id}/events`.
+
+Business AI Context:
+1. En demo, boton `⚙ Configurar negocio`.
+2. Ajustar remitente, saludo, pronombre, firma y metodo de cobro (alias/CBU/MP/custom).
+3. Guardar para que impacte mensajes nuevos en backend.
+4. El generador evita repetir el ultimo mensaje enviado y varia cierres al regenerar.
 
 Ejemplo de payload para prueba manual:
 ```json

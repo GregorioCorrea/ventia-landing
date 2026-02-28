@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { HttpError, handleHttpError, jsonResponse } from "../lib/errors";
 import { EnvValidationError, getEnv, getOpenAiEnv } from "../lib/env";
 import { getHistorySummaryByDebtorId } from "../lib/history";
@@ -8,6 +9,8 @@ import { getQueryParam, getRouteParam, parseJsonBody } from "../lib/request";
 import { getSupabaseClient } from "../lib/supabase";
 import type { SimpleContext, SimpleHttpRequest } from "../lib/types";
 import { getDebtorOrThrow } from "../lib/debtor-service";
+import { buildAddressee } from "../lib/addressee";
+import { getBusinessSettings } from "../lib/business-settings";
 
 type Tone = "amable" | "directo" | "ultimo";
 const ALLOWED_TONES: Tone[] = ["amable", "directo", "ultimo"];
@@ -15,6 +18,14 @@ const ALLOWED_TONES: Tone[] = ["amable", "directo", "ultimo"];
 type MessageRequest = {
   tone?: Tone;
   regenerate?: boolean;
+};
+
+type LastSentEvent = {
+  created_at: string;
+  payload: {
+    message_text?: string;
+    tone?: string;
+  } | null;
 };
 
 function normalizeTone(raw: unknown): Tone {
@@ -57,87 +68,160 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   });
 }
 
-function buildReasonLine(
-  tone: Tone,
-  daysOverdue: number,
-  noResponseCount: number,
-  softTreatment: boolean
-): string {
-  const parts: string[] = [`tono ${tone}`, `${daysOverdue} dias vencido`];
-  if (noResponseCount > 0) {
-    parts.push(`ignoro ${noResponseCount} veces`);
-  }
-  if (softTreatment) {
-    parts.push("enfoque suave por relacion comercial");
-  }
-  return parts.join(" / ");
+function promptHash(prompt: string): string {
+  return createHash("sha256").update(prompt).digest("hex").slice(0, 24);
 }
 
-function buildPrompt(args: {
-  name: string;
-  amountArs: number;
-  daysOverdue: number;
-  tone: Tone;
-  history: { no_response: number; promise: number; paid: number; replied: number };
-  softTreatment: boolean;
-}): string {
-  const amount = `$${Math.round(args.amountArs).toLocaleString("es-AR")}`;
-  const softLine = args.softTreatment
-    ? "Cliente sensible (VIP o pago previo): usa tono conciliador y evita dureza."
-    : "Mantene firmeza profesional sin amenazas.";
-  const ultimoLine =
-    args.tone === "ultimo"
-      ? 'Inclui consecuencia suave: "para no cortar la cuenta corriente o seguir entregando".'
-      : "No menciones cortes ni bloqueo.";
-
-  return `
-Genera UN mensaje de WhatsApp en espanol rioplatense, humano y claro.
-Maximo 280 caracteres (ideal 180-220). Sin amenazas legales.
-
-Contexto fijo:
-- Negocio: Corralon El Puente
-- Cliente: ${args.name}
-- Monto pendiente: ${amount}
-- Dias vencido: ${args.daysOverdue}
-- Tono solicitado: ${args.tone}
-- Historial: no_response=${args.history.no_response}, promise=${args.history.promise}, paid=${args.history.paid}, replied=${args.history.replied}
-
-Requisitos obligatorios:
-1) Saludo corto y natural.
-2) Contexto de cuenta pendiente del corralon.
-3) Incluir monto.
-4) CTA con estas dos opciones: "pagas hoy" o "coordinamos fecha".
-5) ${ultimoLine}
-6) ${softLine}
-
-Devuelve solo el texto final del mensaje, sin comillas ni explicaciones.
-`.trim();
-}
-
-function buildFallbackMessage(args: {
-  name: string;
-  amountArs: number;
+function buildReasonLine(args: {
   tone: Tone;
   daysOverdue: number;
   noResponseCount: number;
   softTreatment: boolean;
+  addresseeType: "person" | "entity";
 }): string {
-  const amount = `$${Math.round(args.amountArs).toLocaleString("es-AR")}`;
-  const hi = `Hola ${args.name}, te escribo de Corralon El Puente.`;
-  const base = `Quedo pendiente ${amount} (${args.daysOverdue} dias).`;
-  const cta = "Te sirve si pagas hoy o coordinamos fecha?";
-  const softConsequence = "Asi evitamos frenar la cuenta corriente y seguimos entregando normal.";
-
-  if (args.tone === "ultimo") {
-    return clampMessage(`${hi} ${base} ${cta} ${softConsequence}`);
-  }
-  if (args.tone === "directo" || args.noResponseCount >= 2) {
-    return clampMessage(`${hi} ${base} Necesito confirmacion concreta hoy. ${cta}`);
+  const parts: string[] = [
+    `tono ${args.tone}`,
+    `${args.daysOverdue} dias`,
+    args.addresseeType === "entity" ? "destinatario entidad" : "destinatario persona"
+  ];
+  if (args.noResponseCount > 0) {
+    parts.push(`ignoro ${args.noResponseCount} veces`);
   }
   if (args.softTreatment) {
-    return clampMessage(`${hi} ${base} Queremos cuidarte la cuenta y ordenarla. ${cta}`);
+    parts.push("suavizado por relacion comercial");
   }
-  return clampMessage(`${hi} ${base} ${cta}`);
+  return parts.join(" / ");
+}
+
+function paymentInstruction(method: string, details: string, callout: string): string {
+  const detail = details?.trim();
+  const intro = callout?.trim() || "Te paso el medio de pago para resolverlo rapido.";
+  if (!detail) {
+    return intro;
+  }
+
+  if (method === "cbu") {
+    return `${intro} CBU: ${detail}.`;
+  }
+  if (method === "mp") {
+    return `${intro} Mercado Pago: ${detail}.`;
+  }
+  if (method === "custom") {
+    return `${intro} ${detail}.`;
+  }
+  return `${intro} Alias: ${detail}.`;
+}
+
+function buildPrompt(args: {
+  variationId: string;
+  tone: Tone;
+  debtorName: string;
+  amountArs: number;
+  daysOverdue: number;
+  debtorNote: string | null;
+  settings: {
+    sender_name: string;
+    sender_role: string;
+    greeting_style: string;
+    pronoun: "vos" | "usted";
+    signature: string;
+    payment_method: string;
+    payment_details: string;
+    payment_callout: string;
+    entity_greeting_rule: string;
+    style_notes: string;
+  };
+  history: {
+    no_response: number;
+    promise: number;
+    paid: number;
+    replied: number;
+    sent: number;
+  };
+  addressee: {
+    addressee_type: "person" | "entity";
+    addressee_line: string;
+  };
+  lastSentText: string;
+  softTreatment: boolean;
+}): string {
+  const amount = `$${Math.round(args.amountArs).toLocaleString("es-AR")}`;
+  const payment = paymentInstruction(
+    args.settings.payment_method,
+    args.settings.payment_details,
+    args.settings.payment_callout
+  );
+
+  return `
+variation_id: ${args.variationId}
+Genera UN mensaje de WhatsApp para cobranza, en espanol rioplatense.
+Limites: maximo 280 caracteres, ideal 180-220.
+
+Contexto:
+- Remitente: ${args.settings.sender_name} (${args.settings.sender_role})
+- Firma: ${args.settings.signature}
+- Saludo sugerido: ${args.addressee.addressee_line}
+- Destinatario tipo: ${args.addressee.addressee_type}
+- Deudor: ${args.debtorName}
+- Monto: ${amount}
+- Dias vencido: ${args.daysOverdue}
+- Nota: ${args.debtorNote || "sin nota"}
+- Historial: sent=${args.history.sent}, no_response=${args.history.no_response}, promise=${args.history.promise}, paid=${args.history.paid}, replied=${args.history.replied}
+- Pronombre requerido: ${args.settings.pronoun}
+- Tono solicitado: ${args.tone}
+- Metodo de cobro: ${payment}
+- Rule entidades: ${args.settings.entity_greeting_rule}
+- Notas de estilo: ${args.settings.style_notes}
+- Ultimo mensaje enviado: ${args.lastSentText || "(ninguno)"}
+
+Reglas obligatorias:
+1) No repetir literalmente el ultimo mensaje enviado ni el mismo cierre.
+2) Incluir monto y CTA con dos opciones: "pagas hoy" o "coordinamos fecha".
+3) Si destinatario es entidad: no saludar como nombre propio; pedir administracion/cuentas a pagar.
+4) Si tono es ultimo: consecuencia suave (cuenta corriente / entregas), sin amenazas.
+5) Incluir metodo de cobro de forma natural.
+6) Cerrar con firma.
+
+Responde solo con el mensaje final.
+`.trim();
+}
+
+function buildFallbackMessage(args: {
+  addresseeLine: string;
+  amountArs: number;
+  daysOverdue: number;
+  tone: Tone;
+  paymentLine: string;
+  signature: string;
+  addresseeType: "person" | "entity";
+}): string {
+  const amount = `$${Math.round(args.amountArs).toLocaleString("es-AR")}`;
+  const base = `${args.addresseeLine}. Te escribo por saldo pendiente ${amount} (${args.daysOverdue} dias).`;
+  const cta = "Te sirve si pagas hoy o coordinamos fecha?";
+  const entityAsk =
+    args.addresseeType === "entity" ? "Si no sos el area correcta, me pasas con administracion/cuentas a pagar?" : "";
+  const lastTone =
+    args.tone === "ultimo"
+      ? "Para evitar frenar la cuenta corriente y seguir entregando normal."
+      : "";
+
+  return clampMessage(`${base} ${cta} ${args.paymentLine} ${entityAsk} ${lastTone} ${args.signature}`.trim());
+}
+
+async function getLastSentEvent(supabase: ReturnType<typeof getSupabaseClient>, debtorId: string) {
+  const { data, error } = await supabase
+    .from("debtor_event")
+    .select("created_at, payload")
+    .eq("debtor_id", debtorId)
+    .eq("type", "sent")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new HttpError(500, "Failed to read last sent event.", "last_sent_read_failed");
+  }
+  return data as LastSentEvent | null;
 }
 
 export async function run(context: SimpleContext, req: SimpleHttpRequest): Promise<void> {
@@ -164,8 +248,10 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     const body = parseJsonBody<MessageRequest>(req.body ?? {}, "invalid_json");
     const tone = normalizeTone(body.tone);
     const regenerate = normalizeRegenerate(body.regenerate ?? getQueryParam(req, "regenerate"));
+    const variationId = `${Date.now()}-${Math.round(Math.random() * 10000)}`;
     let modelName = "local-fallback";
     let openAiReady = false;
+
     try {
       const openAiEnv = getOpenAiEnv();
       modelName = openAiEnv.AZURE_OPENAI_DEPLOYMENT_NAME;
@@ -179,6 +265,7 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
 
     const supabase = getSupabaseClient();
     const debtor = await getDebtorOrThrow(supabase, env.COBROSMART_BUSINESS_ID, debtorId);
+    const settings = await getBusinessSettings(supabase, env.COBROSMART_BUSINESS_ID);
 
     if (!regenerate) {
       const { data: cached, error: cacheError } = await supabase
@@ -204,6 +291,7 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     }
 
     const history = await getHistorySummaryByDebtorId(supabase, debtorId);
+    const lastSent = await getLastSentEvent(supabase, debtorId);
     const priority = calculatePriority(
       {
         days_overdue: debtor.days_overdue,
@@ -213,21 +301,39 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       history
     );
 
+    let addressee = await buildAddressee(debtor.name, settings, openAiReady);
+    if (!openAiReady && addressee.source === "llm") {
+      addressee = await buildAddressee(debtor.name, settings, false);
+    }
+
     const prompt = buildPrompt({
-      name: debtor.name,
+      variationId,
+      tone,
+      debtorName: debtor.name,
       amountArs: debtor.amount_ars,
       daysOverdue: debtor.days_overdue,
-      tone,
+      debtorNote: debtor.note,
+      settings,
       history,
+      addressee,
+      lastSentText: lastSent?.payload?.message_text || "",
       softTreatment: priority.soft_treatment
     });
 
-    const reason = buildReasonLine(
+    const reason = buildReasonLine({
       tone,
-      debtor.days_overdue,
-      history.no_response,
-      priority.soft_treatment
+      daysOverdue: debtor.days_overdue,
+      noResponseCount: history.no_response,
+      softTreatment: priority.soft_treatment,
+      addresseeType: addressee.addressee_type
+    });
+
+    const paymentLine = paymentInstruction(
+      settings.payment_method,
+      settings.payment_details,
+      settings.payment_callout
     );
+
     let messageText: string;
     let finalReason = reason;
     let usedFallback = false;
@@ -236,21 +342,32 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       if (!openAiReady) {
         throw new Error("openai_not_configured");
       }
-      const rawMessage = await withTimeout(generateMessage(prompt), 25000);
+      const rawMessage = await withTimeout(
+        generateMessage(prompt, {
+          temperature: regenerate ? 0.7 : 0.3,
+          top_p: regenerate ? 0.95 : 0.9,
+          max_tokens: 220
+        }),
+        25000
+      );
       messageText = clampMessage(rawMessage);
     } catch (generationError) {
       usedFallback = true;
       logError(context, "OpenAI generation failed, using fallback message.", generationError);
       messageText = buildFallbackMessage({
-        name: debtor.name,
+        addresseeLine: addressee.addressee_line,
         amountArs: debtor.amount_ars,
-        tone,
         daysOverdue: debtor.days_overdue,
-        noResponseCount: history.no_response,
-        softTreatment: priority.soft_treatment
+        tone,
+        paymentLine,
+        signature: settings.signature,
+        addresseeType: addressee.addressee_type
       });
       finalReason = `${reason} / fallback local`;
     }
+
+    const computedPromptHash = promptHash(prompt);
+    const nowIso = new Date().toISOString();
 
     const { error: cacheWriteError } = await supabase.from("message_cache").upsert(
       {
@@ -259,7 +376,10 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
         message_text: messageText,
         message_reason: finalReason,
         model: modelName,
-        created_at: new Date().toISOString()
+        created_at: nowIso,
+        updated_at: nowIso,
+        last_variation_id: variationId,
+        last_prompt_hash: computedPromptHash
       },
       { onConflict: "debtor_id,tone" }
     );
@@ -268,13 +388,21 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
       throw new HttpError(500, "Failed to write message cache.", "cache_write_failed");
     }
 
-    logInfo(context, "Debtor message generated", { debtorId, tone, regenerate });
+    logInfo(context, "Debtor message generated", {
+      debtorId,
+      tone,
+      regenerate,
+      fallback: usedFallback,
+      addresseeType: addressee.addressee_type
+    });
+
     context.res = jsonResponse(200, {
       message_text: messageText,
       reason: finalReason,
       model: modelName,
       cached: false,
-      fallback: usedFallback
+      fallback: usedFallback,
+      addressee_type: addressee.addressee_type
     });
   } catch (error) {
     context.res = handleHttpError(context, error);

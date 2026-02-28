@@ -11,6 +11,9 @@ type AllowedStatus = "sent" | "promise" | "paid" | "no_response" | "replied";
 type StatusBody = {
   status?: AllowedStatus;
   promise_date?: string;
+  message_text?: string;
+  tone?: "amable" | "directo" | "ultimo";
+  channel?: string;
 };
 
 const ALLOWED: AllowedStatus[] = ["sent", "promise", "paid", "no_response", "replied"];
@@ -68,6 +71,13 @@ export async function run(context: SimpleContext, req: SimpleHttpRequest): Promi
     if (promiseDate) {
       eventPayload.promise_date = promiseDate;
     }
+    if (body.message_text && body.message_text.trim()) {
+      eventPayload.message_text = body.message_text.trim();
+    }
+    if (body.tone) {
+      eventPayload.tone = body.tone;
+    }
+    eventPayload.channel = body.channel?.trim() || "whatsapp_manual";
 
     const { error: eventError } = await supabase.from("debtor_event").insert({
       debtor_id: debtor.id,

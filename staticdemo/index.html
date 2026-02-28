@@ -108,6 +108,16 @@
     .btn-ghost:hover{ background:rgba(255,255,255,0.08); }
     .btn-sm{ padding:8px 14px; font-size:12px; border-radius:10px; }
     .btn-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input, select{
+      width:100%;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.06);
+      color:var(--paper);
+      border-radius:10px;
+      padding:9px 10px;
+      font-family:var(--font-body);
+      font-size:13px;
+    }
 
     /* ── Screen 1 — Metrics ── */
     .metrics{
@@ -434,6 +444,7 @@
     <div class="pills">
       <div class="pill"><strong>Negocio:</strong> El Puente (Azul, BA)</div>
       <div class="pill"><strong>Dueño:</strong> Gustavo "Tavo" Ibarra</div>
+      <button class="btn btn-ghost btn-sm" id="btnSettings" type="button">⚙ Configurar negocio</button>
     </div>
   </header>
 
@@ -553,6 +564,7 @@
             <div class="preview-label">Preview WhatsApp</div>
             <div class="msg-bubble placeholder" id="msgBubble">Elegí un deudor para ver el mensaje.</div>
           </div>
+          <div class="subtle" id="messageContextHint" style="font-size:12px;">Generado según tu estilo + historial.</div>
 
           <div class="btn-row">
             <button class="btn btn-ghost btn-sm" id="btnRegenerate" disabled>Regenerar</button>
@@ -659,6 +671,45 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="settingsModalBg" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-who">
+        <div class="mw-name">Configurar negocio</div>
+        <div class="mw-meta">Contexto IA y estilo de cobranza</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnSettingsClose">Cerrar</button>
+    </div>
+    <div class="chat-body" style="gap:8px;">
+      <div class="subtle">Estos datos guían el mensaje de IA. MVP sin auth.</div>
+      <input id="stSenderName" placeholder="sender_name (ej: Tavo)" />
+      <input id="stSenderRole" placeholder="sender_role (ej: Corralón El Puente)" />
+      <select id="stGreetingStyle">
+        <option>Buen día</option>
+        <option>Hola</option>
+        <option>Qué hacés</option>
+      </select>
+      <select id="stPronoun">
+        <option value="vos">vos</option>
+        <option value="usted">usted</option>
+      </select>
+      <input id="stSignature" placeholder="signature (ej: Tavo — El Puente)" />
+      <select id="stPaymentMethod">
+        <option value="alias">alias</option>
+        <option value="cbu">cbu</option>
+        <option value="mp">mp</option>
+        <option value="custom">custom</option>
+      </select>
+      <input id="stPaymentDetails" placeholder="payment_details (alias/cbu/link)" />
+      <input id="stPaymentCallout" placeholder="payment_callout" />
+      <input id="stEntityRule" placeholder="entity_greeting_rule" />
+      <input id="stStyleNotes" placeholder="style_notes" />
+      <button class="btn btn-primary btn-sm" id="btnSettingsSave">Guardar</button>
+      <div class="subtle" id="settingsStatus"></div>
+    </div>
+  </div>
+</div>
+
 <script>
   const fmt = n => "$" + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const $ = s => document.querySelector(s);
@@ -672,6 +723,18 @@
   let currentMessageReason = "";
   let currentMessageCached = false;
   const eventsByDebtor = new Map();
+  let businessSettings = {
+    sender_name: "Tavo",
+    sender_role: "Corralon El Puente",
+    greeting_style: "Buen dia",
+    pronoun: "vos",
+    signature: "Tavo - El Puente",
+    payment_method: "alias",
+    payment_details: "",
+    payment_callout: "Te paso alias para que te quede simple.",
+    entity_greeting_rule: "si es empresa/coop/municipalidad: pedir administracion o cuentas a pagar",
+    style_notes: "rioplatense, corto, sin amenaza, concreto"
+  };
 
   function showScreen(n){
     $$(".screen").forEach(s => s.classList.remove("active"));
@@ -838,6 +901,7 @@
     currentMessageReason = data.reason || "";
     currentMessageCached = !!data.cached;
     updateMsgBubble(currentMessageText);
+    $("#messageContextHint").textContent = `Generado según tu estilo + historial${data.fallback ? " (fallback)" : ""}.`;
     updatePanelMeta(d);
   }
 
@@ -870,6 +934,7 @@
       currentMessageReason = "mensaje IA no disponible";
       currentMessageCached = false;
       updateMsgBubble("No se pudo generar mensaje IA ahora. Proba Regenerar.");
+      $("#messageContextHint").textContent = "Generado según tu estilo + historial.";
       updatePanelMeta(d);
     }
     try {
@@ -926,6 +991,69 @@
     debtors = items.map(normalizeDebtor);
   }
 
+  function applySettingsToForm(){
+    $("#stSenderName").value = businessSettings.sender_name || "";
+    $("#stSenderRole").value = businessSettings.sender_role || "";
+    $("#stGreetingStyle").value = businessSettings.greeting_style || "Buen día";
+    $("#stPronoun").value = businessSettings.pronoun || "vos";
+    $("#stSignature").value = businessSettings.signature || "";
+    $("#stPaymentMethod").value = businessSettings.payment_method || "alias";
+    $("#stPaymentDetails").value = businessSettings.payment_details || "";
+    $("#stPaymentCallout").value = businessSettings.payment_callout || "";
+    $("#stEntityRule").value = businessSettings.entity_greeting_rule || "";
+    $("#stStyleNotes").value = businessSettings.style_notes || "";
+  }
+
+  function readSettingsFromForm(){
+    return {
+      sender_name: $("#stSenderName").value.trim(),
+      sender_role: $("#stSenderRole").value.trim(),
+      greeting_style: $("#stGreetingStyle").value,
+      pronoun: $("#stPronoun").value,
+      signature: $("#stSignature").value.trim(),
+      payment_method: $("#stPaymentMethod").value,
+      payment_details: $("#stPaymentDetails").value.trim(),
+      payment_callout: $("#stPaymentCallout").value.trim(),
+      entity_greeting_rule: $("#stEntityRule").value.trim(),
+      style_notes: $("#stStyleNotes").value.trim()
+    };
+  }
+
+  async function fetchSettings(){
+    const res = await fetch("/api/settings");
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.message || "No se pudo cargar configuracion.");
+    }
+    businessSettings = payload.item || businessSettings;
+    applySettingsToForm();
+  }
+
+  async function saveSettings(){
+    const body = readSettingsFromForm();
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.message || "No se pudo guardar configuracion.");
+    }
+    businessSettings = payload.item || body;
+    $("#settingsStatus").textContent = "Configuracion guardada.";
+  }
+
+  function openSettingsModal(){
+    applySettingsToForm();
+    $("#settingsStatus").textContent = "";
+    $("#settingsModalBg").classList.add("open");
+  }
+
+  function closeSettingsModal(){
+    $("#settingsModalBg").classList.remove("open");
+  }
+
   async function fetchDebtorMessage(debtorId, messageTone, regenerate){
     const res = await fetch(`/api/debtors/${encodeURIComponent(debtorId)}/message`, {
       method: "POST",
@@ -953,6 +1081,11 @@
     const body = { status };
     if (promiseDate) {
       body.promise_date = promiseDate;
+    }
+    if (status === "sent") {
+      body.message_text = currentMessageText || "";
+      body.tone = tone;
+      body.channel = "whatsapp_manual";
     }
     const res = await fetch(`/api/debtors/${encodeURIComponent(selId)}/status`, {
       method: "POST",
@@ -1187,9 +1320,17 @@
     }
   };
   $("#btnConv").onclick = openModal;
+  $("#btnSettings").onclick = openSettingsModal;
   $("#btnClose").onclick = closeModal;
+  $("#btnSettingsClose").onclick = closeSettingsModal;
   $("#modalBg").onclick = e => { if (e.target === $("#modalBg")) closeModal(); };
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+  $("#settingsModalBg").onclick = e => { if (e.target === $("#settingsModalBg")) closeSettingsModal(); };
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      closeModal();
+      closeSettingsModal();
+    }
+  });
 
   $("#btnCopy").onclick = async () => {
     const txt = $("#msgBubble").textContent || "";
@@ -1263,7 +1404,16 @@
     }
   };
 
-  loadAndRenderDebtors().catch((error) => {
+  $("#btnSettingsSave").onclick = async () => {
+    try {
+      await saveSettings();
+    } catch (error) {
+      $("#settingsStatus").textContent =
+        error && error.message ? error.message : "No se pudo guardar configuracion.";
+    }
+  };
+
+  Promise.all([fetchSettings().catch(() => {}), loadAndRenderDebtors()]).catch((error) => {
     setImportResult("No se pudieron cargar deudores desde /api/debtors.", true);
     renderBars();
     renderTable();
