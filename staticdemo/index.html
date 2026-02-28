@@ -118,6 +118,13 @@
       font-family:var(--font-body);
       font-size:13px;
     }
+    .field-label{
+      font-size:11px;
+      color:rgba(245,243,239,0.70);
+      letter-spacing:0.02em;
+      margin-top:2px;
+      margin-bottom:2px;
+    }
 
     /* ── Screen 1 — Metrics ── */
     .metrics{
@@ -682,27 +689,37 @@
     </div>
     <div class="chat-body" style="gap:8px;">
       <div class="subtle">Estos datos guían el mensaje de IA. MVP sin auth.</div>
+      <div class="field-label">Nombre remitente (`sender_name`)</div>
       <input id="stSenderName" placeholder="sender_name (ej: Tavo)" />
+      <div class="field-label">Nombre del negocio/rol (`sender_role`)</div>
       <input id="stSenderRole" placeholder="sender_role (ej: Corralón El Puente)" />
+      <div class="field-label">Estilo de saludo (`greeting_style`)</div>
       <select id="stGreetingStyle">
         <option>Buen día</option>
         <option>Hola</option>
         <option>Qué hacés</option>
       </select>
+      <div class="field-label">Pronombre (`pronoun`)</div>
       <select id="stPronoun">
         <option value="vos">vos</option>
         <option value="usted">usted</option>
       </select>
+      <div class="field-label">Firma (`signature`)</div>
       <input id="stSignature" placeholder="signature (ej: Tavo — El Puente)" />
+      <div class="field-label">Método de pago (`payment_method`)</div>
       <select id="stPaymentMethod">
         <option value="alias">alias</option>
         <option value="cbu">cbu</option>
         <option value="mp">mp</option>
         <option value="custom">custom</option>
       </select>
+      <div class="field-label">Detalle de pago (`payment_details`)</div>
       <input id="stPaymentDetails" placeholder="payment_details (alias/cbu/link)" />
+      <div class="field-label">Texto de cobro (`payment_callout`)</div>
       <input id="stPaymentCallout" placeholder="payment_callout" />
+      <div class="field-label">Regla para entidades (`entity_greeting_rule`)</div>
       <input id="stEntityRule" placeholder="entity_greeting_rule" />
+      <div class="field-label">Notas de estilo IA (`style_notes`)</div>
       <input id="stStyleNotes" placeholder="style_notes" />
       <button class="btn btn-primary btn-sm" id="btnSettingsSave">Guardar</button>
       <div class="subtle" id="settingsStatus"></div>
